@@ -1,0 +1,8 @@
+PhucVanKhoaFileSharing v.1.0
+Copyright (c) 2024 PhucVanKhoa
+
+Usage: python main.py [command] [arguments]
+
+Options:
+  -h, --help            Show this help message and exit
+  -v, --version         Show program's version number and exit
