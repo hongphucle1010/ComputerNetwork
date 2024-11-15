@@ -11,12 +11,7 @@ class Program:
         self.ip = socket.gethostbyname(socket.gethostname())
         self.configs = Configuration()
         self.port = self.configs.port
-        self.announcer = Announcer(
-            self.configs.tracker_url,
-            self.configs.peer_id,
-            self.ip,
-            5,
-        )
+        self.announcer = Announcer(self.configs, self.ip)
         self.seeding_pieces_manager = SeedingPiecesManager()
         self.download_torrent_manager = DownloadTorrentManager(
             self.configs.download_dir, self

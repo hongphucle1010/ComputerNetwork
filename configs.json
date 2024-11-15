@@ -1,8 +1,8 @@
 {
   "tracker_url": "http://192.168.1.7:3000",
-  "peer_id": "",
+  "peer_id": "6734fb215f1bdc744fa34cac",
   "download_dir": "downloads",
   "max_connections": 100,
-  "refresh_interval": 300,
+  "refresh_interval": 5,
   "port": 6881
 }
