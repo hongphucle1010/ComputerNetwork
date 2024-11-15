@@ -1,3 +1,8 @@
+from peer_manager import PeerManager
+from configuration import Configuration
+import threading
+
+
 class Torrent:
     def __init__(
         self,
@@ -6,19 +11,42 @@ class Torrent:
         pieces: list,
         total_size: int,
         downloaded_pieces: int,
+        tracker_url: str,
+        configs: Configuration,
     ):
         self.torrent_id = torrent_id
         self.file_name = file_name
         self.pieces = pieces
         self.total_size = total_size
         self.downloaded_pieces = downloaded_pieces
+        self.tracker_url = tracker_url
+        self.configs = configs
+        self.peer_manager = PeerManager(self)
+        self.thread = None
 
-    def startDownload(self):
+    def startDownload(self, max_connections: int = 10):
+        self.peer_manager.max_connections = max_connections
+        self.peer_manager.fetchPeers()
+        self.thread = threading.Thread(target=self.peer_manager.startDownload)
+        self.thread.start()
         print("Starting download...")
+
+    def stopDownload(self):
+        self.peer_manager.stopDownload()
+        self.thread.join()
+        print("Download stopped")
 
     def isComplete(self):
         print("Checking if torrent is complete...")
         return self.downloaded_pieces == len(self.pieces)
+
+    def progress(self):
+        # Round to integer
+        return int((self.downloaded_pieces / len(self.pieces)) * 100)
+
+    def mergePieces(self):
+        # TODO: Implement merging pieces
+        print("Merging pieces...")
 
     def to_dict(self):
         return {

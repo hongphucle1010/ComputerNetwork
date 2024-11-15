@@ -6,7 +6,7 @@ from configuration import Configuration
 
 
 class Announcer:
-    def __init__(self, configs: Configuration, ip):
+    def __init__(self, configs: Configuration, ip: str):
         self.configs = configs
         self.ip = ip
         self.thread = None
@@ -21,7 +21,7 @@ class Announcer:
                 "ip": self.ip,
                 "port": self.configs.port,
                 "torrents": [
-                    {"torrentId": "6734f7a6d04a4e80469e5d32", "pieceHashes": ["hash1"]}
+                    {"torrentId": "6734f7a6d04a4e80469e5d32", "pieceIndexes": [1]}
                 ],
             },
         )
