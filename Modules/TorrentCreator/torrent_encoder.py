@@ -1,9 +1,12 @@
+import bencodepy
+
 class TorrentEncoder:
-    def __init__(self):
-        self.metadata = None
+    def __init__(self, metadata):
+        self.metadata = metadata
+        self.encodedata = None
 
     def bencode(self):
-        pass
-
+        self.encodedata = bencodepy.encode(self.metadata)
     def save(self, output_path):
-        pass
+        with open(output_path, "wb") as file:
+            file.write(self.encodedata)

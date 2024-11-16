@@ -9,9 +9,14 @@ class FileHandler:
         self.pieces = []
 
     def splitIntoPieces(self):
+        index = 0
         with open(self.file_path, "rb") as f:
             while True:
                 piece = f.read(self.piece_size)
                 if not piece:
                     break
-                self.pieces.append(piece)
+                self.pieces.append({
+                    "index": index,
+                    "size": self.piece_size,
+                    "data": piece
+                })
