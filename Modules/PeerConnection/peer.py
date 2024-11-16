@@ -1,4 +1,4 @@
-from piece import Piece
+from Modules.PeerConnection.piece import Piece
 
 
 class Peer:
@@ -11,4 +11,3 @@ class Peer:
         print(f"Downloading piece {piece.index} from {self.ip}:{self.port}")
         print("Piece downloaded successfully")
         piece.setData(b"Piece data")  # Fake piece data
-        

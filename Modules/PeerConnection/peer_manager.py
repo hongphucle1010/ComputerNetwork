@@ -1,7 +1,8 @@
-from peer import Peer
+from Modules.PeerConnection.peer import Peer
 import requests
 from collections import deque
 import threading
+import time
 
 
 class PeerManager:
@@ -30,7 +31,11 @@ class PeerManager:
             self.peerList.append(peer)
 
     def stopDownload(self):
+        print("Stopping download...")
         self.stop_triggered = True
+
+    # def startDownload(self):
+    # while not self.stop_triggered and not self.torrent.isComplete():
 
     def startDownload(self):
         while not self.stop_triggered and not self.torrent.isComplete():
@@ -77,8 +82,12 @@ class PeerManager:
             for thread in threads:
                 thread.join()
 
-        if self.connectionQueue and len(self.active_download_indexes) == 0:
-            if not self.torrent.isComplete():
-                print("Download stopped. No more peers available.")
-            else:
-                print("Download complete.")
+            if (
+                self.connectionQueue == deque([])
+                and len(self.active_download_indexes) == 0
+            ):
+                if not self.torrent.isComplete():
+                    print("Download stopped. No more peers available.")
+                else:
+                    print("Download complete.")
+                self.stopDownload()
