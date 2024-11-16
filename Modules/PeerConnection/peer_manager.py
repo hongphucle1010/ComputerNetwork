@@ -91,3 +91,4 @@ class PeerManager:
                 else:
                     print("Download complete.")
                 self.stopDownload()
+                self.torrent.stopPeer()
