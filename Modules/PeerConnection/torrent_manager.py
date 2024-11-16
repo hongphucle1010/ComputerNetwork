@@ -1,6 +1,7 @@
 import json
 from Modules.PeerConnection.torrent import Torrent
 from Modules.PeerConnection.piece import Piece
+from Modules.PeerConnection.seeding_pieces_manager import SeedingPiecesManager
 
 torrent_dir = "torrents"
 torrent_file_path = f"{torrent_dir}/torrents.json"
@@ -14,6 +15,8 @@ class TorrentManager:
         self.paused_torrents = []
         self.program = program
         self.loadTorrents()
+        self.seeding_pieces_manager = SeedingPiecesManager(self)
+        self.seeding_pieces_manager.start()
 
     def saveTorrents(self):
         with open(torrent_file_path, "w") as f:
@@ -80,6 +83,7 @@ class TorrentManager:
             2048,
             self.program.configs.tracker_url,
             self.program.configs,
+            self,
         )
         self.insertTorrent(torrent)
 
@@ -88,21 +92,33 @@ class TorrentManager:
             with open(torrent_file_path, "r") as f:
                 torrents = json.load(f)
                 self.active_torrents = [
-                    Torrent.from_dict(torrent, self.program.configs)
+                    Torrent.from_dict(torrent, self.program.configs, self)
                     for torrent in torrents["active"]
                 ]
                 self.completed_torrents = [
-                    Torrent.from_dict(torrent, self.program.configs)
+                    Torrent.from_dict(torrent, self.program.configs, self)
                     for torrent in torrents["completed"]
                 ]
                 self.paused_torrents = [
-                    Torrent.from_dict(torrent, self.program.configs)
+                    Torrent.from_dict(torrent, self.program.configs, self)
                     for torrent in torrents["paused"]
                 ]
             for torrent in self.active_torrents:
                 torrent.startDownload()
         except FileNotFoundError:
             pass
+
+    def pauseAllDownloads(self):
+        for torrent in self.active_torrents:
+            torrent.stopDownload()
+
+    def stop(self):
+        self.pauseAllDownloads()
+        self.saveTorrents()
+        self.seeding_pieces_manager.stop()
+
+    def getAllTorrents(self):
+        return self.active_torrents + self.completed_torrents + self.paused_torrents
 
 
 # Dòng dưới dùng để testing thôi nhen ...

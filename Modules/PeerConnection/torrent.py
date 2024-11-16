@@ -13,6 +13,7 @@ class Torrent:
         total_size: int,
         tracker_url: str,
         configs: Configuration,
+        torrent_manager,
         downloaded_pieces: int = 0,
     ):
         self.torrent_id = torrent_id
@@ -24,6 +25,7 @@ class Torrent:
         self.configs = configs
         self.peer_manager = PeerManager(self)
         self.thread = None
+        self.torrent_manager = torrent_manager
 
     def startDownload(self, max_connections: int = 10):
         self.peer_manager.max_connections = max_connections
@@ -32,10 +34,19 @@ class Torrent:
         self.thread.start()
         print("Starting download...")
 
+    def stopPeer(self):
+        if self.isComplete():
+            self.mergePieces()
+            self.torrent_manager.completeDownload(self.torrent_id)
+        else:
+            self.torrent_manager.pauseDownload(self.torrent_id)
+
     def stopDownload(self):
         self.peer_manager.stopDownload()
-        self.thread.join()
+        if self.thread is not None:
+            self.thread.join()
         print("Download stopped")
+        self.stopPeer()
 
     def isComplete(self):
         print("Checking if torrent is complete...")
@@ -60,7 +71,7 @@ class Torrent:
         }
 
     @staticmethod
-    def from_dict(torrent_dict, configs: Configuration):
+    def from_dict(torrent_dict, configs: Configuration, torrent_manager):
         return Torrent(
             torrent_id=torrent_dict["torrent_id"],
             file_name=torrent_dict["file_name"],
@@ -72,6 +83,7 @@ class Torrent:
             downloaded_pieces=torrent_dict["downloaded_pieces"],
             configs=configs,
             tracker_url=torrent_dict["tracker_url"],
+            torrent_manager=torrent_manager,
         )
 
     @staticmethod

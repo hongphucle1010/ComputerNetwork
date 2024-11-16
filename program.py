@@ -11,7 +11,6 @@ class Program:
         self.configs = Configuration()
         self.port = self.configs.port
         self.announcer = Announcer(self.configs, self.ip)
-        self.seeding_pieces_manager = SeedingPiecesManager()
         self.torrent_manager = TorrentManager(self.configs.download_dir, self)
         self.announcer.start()
 
@@ -48,6 +47,7 @@ class Program:
     def shutdown(self):
         print("Shutting down program...")
         self.announcer.stop()
+        self.torrent_manager.stop()
         exit(0)
 
     def addTorrent(self, torrent):

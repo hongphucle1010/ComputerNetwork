@@ -1,5 +1,7 @@
 {
-    "active": [
+    "active": [],
+    "completed": [],
+    "paused": [
         {
             "torrent_id": "6734f7a6d04a4e80469e5d32",
             "file_name": "file1",
@@ -14,14 +16,12 @@
                     "index": 1,
                     "hash": "hash1",
                     "size": 1024,
-                    "downloaded": false
+                    "downloaded": true
                 }
             ],
             "total_size": 2048,
-            "downloaded_pieces": 0,
+            "downloaded_pieces": 1,
             "tracker_url": "http://192.168.1.7:3000"
         }
-    ],
-    "completed": [],
-    "paused": []
+    ]
 }
