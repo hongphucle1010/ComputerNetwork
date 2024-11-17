@@ -36,7 +36,7 @@ class SeedingPiecesManager:
     def startServer(self, port):
         try:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            server_socket.bind(("localhost", port))
+            server_socket.bind(("0.0.0.0", port))
             server_socket.listen(5)
             print("Server is listening on port", port)
             server_socket.settimeout(1)  # Allow periodic checks of stop_trigger
