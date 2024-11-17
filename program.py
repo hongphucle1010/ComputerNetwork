@@ -12,7 +12,7 @@ class Program:
         self.ip = socket.gethostbyname(socket.gethostname())
         self.configs = Configuration()
         self.port = self.configs.port
-        self.announcer = Announcer(self.configs, self.ip)
+        self.announcer = Announcer(self.configs, self.ip, self)
         self.torrent_manager = TorrentManager(self.configs.download_dir, self)
         self.announcer.start()
 
@@ -34,6 +34,10 @@ class Program:
                     )
                     torrent_creator.create(
                         f"torrents/{MetadataBuilder.split_file_path(file_path)}.torrent"
+                    )
+                    self.torrent_manager.addTorrent(
+                        f"torrents/{MetadataBuilder.split_file_path(file_path)}.torrent",
+                        downloaded_path=file_path,
                     )
 
                 elif option == 2:

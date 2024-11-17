@@ -6,3 +6,4 @@ configs.json
 
 # Ignore torrents folder
 torrents/
+downloads/

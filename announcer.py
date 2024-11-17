@@ -6,11 +6,12 @@ from configuration import Configuration
 
 
 class Announcer:
-    def __init__(self, configs: Configuration, ip: str):
+    def __init__(self, configs: Configuration, ip: str, program):
         self.configs = configs
         self.ip = ip
         self.thread = None
         self.stop_triggered = False
+        self.program = program
 
     def announce(self):
         # Send put request to tracker_url with ip, peer_id and port
@@ -20,9 +21,7 @@ class Announcer:
                 "peerId": self.configs.peer_id,
                 "ip": self.ip,
                 "port": self.configs.port,
-                "torrents": [
-                    {"torrentId": "6734f7a6d04a4e80469e5d32", "pieceIndexes": [1]}
-                ],
+                "torrents": self.program.torrent_manager.getAllTorrents(),
             },
         )
         if response.status_code == 200:

@@ -14,6 +14,7 @@ class Torrent:
         tracker_url: str,
         configs: Configuration,
         torrent_manager,
+        downloaded_path=None,
     ):
         self.torrent_id = torrent_id
         self.file_name = file_name
@@ -25,6 +26,7 @@ class Torrent:
         self.thread = None
         self.torrent_manager = torrent_manager
         self.downloaded_pieces = 0
+        self.downloaded_path = downloaded_path
         for piece in self.pieces:
             if piece.verifyDownload():
                 self.downloaded_pieces += 1
@@ -59,8 +61,14 @@ class Torrent:
         return int((self.downloaded_pieces / len(self.pieces)) * 100)
 
     def mergePieces(self):
-        # TODO: Implement merging pieces
-        print("Merging pieces...")
+        # Check if all pieces are downloaded and the file is not already created
+        if not self.downloaded_path and self.isComplete():
+            file_path = f"downloads/{self.file_name}"
+            with open(file_path, "wb") as f:
+                for piece in self.pieces:
+                    f.write(piece.getData())
+            self.downloaded_path = file_path
+            self.open()
 
     def to_announcer_dict(self):
         # Format: {"torrentId": "6734f7a6d04a4e80469e5d32", "pieceIndexes": [1]}
@@ -76,7 +84,16 @@ class Torrent:
             "pieces": Piece.convertPieceArrayToDictArray(self.pieces),
             "total_size": self.total_size,
             "tracker_url": self.tracker_url,
+            "downloaded_path": self.downloaded_path,
         }
+
+    def open(self):
+        # Open the downloaded file
+        if self.downloaded_path:
+            print("Opening file...")
+            import os
+
+            os.system(f"start {self.downloaded_path}")
 
     @staticmethod
     def from_dict(torrent_dict, configs: Configuration, torrent_manager):
@@ -91,6 +108,7 @@ class Torrent:
             configs=configs,
             tracker_url=torrent_dict["tracker_url"],
             torrent_manager=torrent_manager,
+            downloaded_path=torrent_dict["downloaded_path"],
         )
 
     @staticmethod

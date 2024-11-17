@@ -1,8 +1,8 @@
 {
-  "tracker_url": "http://localhost:3000",
-  "peer_id": "6734fb215f1bdc744fa34cac",
-  "download_dir": "downloads",
-  "max_connections": 100,
-  "refresh_interval": 5,
-  "port": 6881
+    "tracker_url": "http://localhost:3000",
+    "peer_id": "6739aa0012fe9a48a2cbbcd9",
+    "download_dir": "downloads",
+    "max_connections": 100,
+    "refresh_interval": 5,
+    "port": 6881
 }

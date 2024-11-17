@@ -63,10 +63,11 @@ class TorrentManager:
         self.saveTorrents()
 
     def insertTorrent(self, torrent: Torrent):
-        self.paused_torrents.append(torrent)
+        self.active_torrents.append(torrent)
+        torrent.startDownload()
         self.saveTorrents()
 
-    def addTorrent(self, file_path: str):
+    def addTorrent(self, file_path: str, downloaded_path: str = None):
         # Fake torrent data
         torrent_decoder = TorrentDecoder(file_path)
         metadata = torrent_decoder.decode()
@@ -78,6 +79,7 @@ class TorrentManager:
                 "pieces": metadata["pieces"],
                 "total_size": metadata["size"],
                 "tracker_url": metadata["tracker_url"],
+                "downloaded_path": downloaded_path,
             },
             self.program.configs,
             self,
@@ -115,7 +117,8 @@ class TorrentManager:
         self.seeding_pieces_manager.stop()
 
     def getAllTorrents(self):
-        return self.active_torrents + self.completed_torrents + self.paused_torrents
+        torrents = self.active_torrents + self.completed_torrents + self.paused_torrents
+        return [torrent.to_announcer_dict() for torrent in torrents]
 
 
 # Dòng dưới dùng để testing thôi nhen ...

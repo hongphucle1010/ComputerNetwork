@@ -38,6 +38,9 @@ class PeerManager:
     # while not self.stop_triggered and not self.torrent.isComplete():
 
     def startDownload(self):
+        if self.torrent.isComplete() and not self.torrent.downloaded_path:
+            self.torrent.mergePieces()
+            return
         while not self.stop_triggered and not self.torrent.isComplete():
             # Lock for thread-safe operations on shared resources
             lock = threading.Lock()
