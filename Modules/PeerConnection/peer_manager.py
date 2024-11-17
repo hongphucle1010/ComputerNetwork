@@ -64,7 +64,9 @@ class PeerManager:
                 def download_wrapper(index):
                     try:
                         peer.downloadPieces(self.torrent.pieces[index])
-                        if True:  # Verify piece integrity
+                        if self.torrent.pieces[
+                            index
+                        ].verifyDownload():  # Verify piece integrity
                             with lock:
                                 self.torrent.downloaded_pieces += 1
                         with lock:

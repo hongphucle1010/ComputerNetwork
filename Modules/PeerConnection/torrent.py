@@ -9,23 +9,25 @@ class Torrent:
         self,
         torrent_id: str,
         file_name: str,
-        pieces: list,
+        pieces: list[Piece],
         total_size: int,
         tracker_url: str,
         configs: Configuration,
         torrent_manager,
-        downloaded_pieces: int = 0,
     ):
         self.torrent_id = torrent_id
         self.file_name = file_name
         self.pieces = pieces
         self.total_size = total_size
-        self.downloaded_pieces = downloaded_pieces
         self.tracker_url = tracker_url
         self.configs = configs
         self.peer_manager = PeerManager(self)
         self.thread = None
         self.torrent_manager = torrent_manager
+        self.downloaded_pieces = 0
+        for piece in self.pieces:
+            if piece.verifyDownload():
+                self.downloaded_pieces += 1
 
     def startDownload(self, max_connections: int = 10):
         self.peer_manager.max_connections = max_connections
@@ -60,13 +62,19 @@ class Torrent:
         # TODO: Implement merging pieces
         print("Merging pieces...")
 
+    def to_announcer_dict(self):
+        # Format: {"torrentId": "6734f7a6d04a4e80469e5d32", "pieceIndexes": [1]}
+        return {
+            "torrentId": self.torrent_id,
+            "pieceIndexes": [piece.index for piece in self.pieces if piece.downloaded],
+        }
+
     def to_dict(self):
         return {
             "torrent_id": self.torrent_id,
             "file_name": self.file_name,
             "pieces": Piece.convertPieceArrayToDictArray(self.pieces),
             "total_size": self.total_size,
-            "downloaded_pieces": self.downloaded_pieces,
             "tracker_url": self.tracker_url,
         }
 
@@ -80,7 +88,6 @@ class Torrent:
                 for piece in torrent_dict["pieces"]
             ],
             total_size=torrent_dict["total_size"],
-            downloaded_pieces=torrent_dict["downloaded_pieces"],
             configs=configs,
             tracker_url=torrent_dict["tracker_url"],
             torrent_manager=torrent_manager,

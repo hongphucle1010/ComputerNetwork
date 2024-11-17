@@ -44,7 +44,6 @@
                 }
             ],
             "total_size": 3010320,
-            "downloaded_pieces": 0,
             "tracker_url": "http://localhost:3000"
         }
     ]

@@ -33,11 +33,6 @@ class TorrentManager:
                 indent=4,
             )
 
-    # def startDownload(self, torrent: Torrent):
-    #     print("Starting download...")
-    #     self.active_torrents.append(torrent)
-    #     self.saveTorrents()
-
     def findTorrent(self, torrent_id: str, list_torrents: list[Torrent]) -> Torrent:
         for torrent in list_torrents:
             if torrent.torrent_id == torrent_id:
@@ -82,7 +77,6 @@ class TorrentManager:
                 "file_name": metadata["name"],
                 "pieces": metadata["pieces"],
                 "total_size": metadata["size"],
-                "downloaded_pieces": 0,
                 "tracker_url": metadata["tracker_url"],
             },
             self.program.configs,

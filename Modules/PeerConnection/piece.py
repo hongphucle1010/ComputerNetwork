@@ -8,6 +8,7 @@ class Piece:
         self.size = size
         self.downloaded = False
         self.torrent_id = torrent_id
+        self.verifyDownload()
 
     def getFileName(self):
         return f"{self.torrent_id}_{self.index}.dat"
@@ -19,12 +20,24 @@ class Piece:
         self.downloaded = True
 
     def getData(self):
-        # Load data from file, path: /pieces/{torrent_id}_{index}.dat
-        with open(f"pieces/{self.getFileName()}", "rb") as f:
-            return f.read()
+        # Check if file exists. If not, return None.
+        try:
+            with open(f"pieces/{self.getFileName()}", "rb") as f:
+                return f.read()
+        except FileNotFoundError:
+            return None
 
     def verifyIntegrity(self):
-        return hashlib.sha1(self.getData()).hexdigest() == self.hash
+        data = self.getData()
+        if data is None:
+            return False
+        return hashlib.sha1(data).hexdigest() == self.hash
+
+    def verifyDownload(self):
+        if self.verifyIntegrity():
+            self.downloaded = True
+            return True
+        return False
 
     def to_dict(self):
         return {
