@@ -46,7 +46,8 @@ class Program:
                     self.torrent_manager.addTorrent(file_path=file_path)
                 elif option == 3:
                     print("Resume torrent...")
-                    self.torrent_manager.resumeDownload("6734f7a6d04a4e80469e5d32")
+                    torrent_id = input("Enter torrent ID: ")
+                    self.torrent_manager.resumeDownload(torrent_id)
                 elif option == 0:
                     print("Exiting program...")
                 else:
