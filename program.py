@@ -3,6 +3,8 @@ from configuration import Configuration
 from announcer import Announcer
 from Modules.PeerConnection.seeding_pieces_manager import SeedingPiecesManager
 from Modules.PeerConnection.torrent_manager import TorrentManager
+from Modules.TorrentCreator.torrent_creator import TorrentCreator
+from Modules.TorrentCreator.metadata_builder import MetadataBuilder
 
 
 class Program:
@@ -25,6 +27,15 @@ class Program:
                 option = int(input("Select an option: "))
                 if option == 1:
                     print("Creating torrent...")
+                    file_path = input("Enter file path: ")
+                    piece_size = int(input("Enter piece size (in KB): "))
+                    torrent_creator = TorrentCreator(
+                        file_path, self.configs.tracker_url, piece_size * 1024
+                    )
+                    torrent_creator.create(
+                        f"torrents/{MetadataBuilder.split_file_path(file_path)}.torrent"
+                    )
+
                 elif option == 2:
                     print("Add torrent...")
                     file_path = input("Enter file path: ")

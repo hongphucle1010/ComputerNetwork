@@ -1,5 +1,5 @@
 {
-  "tracker_url": "http://192.168.1.7:3000",
+  "tracker_url": "http://localhost:3000",
   "peer_id": "6734fb215f1bdc744fa34cac",
   "download_dir": "downloads",
   "max_connections": 100,

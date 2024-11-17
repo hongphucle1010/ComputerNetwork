@@ -11,9 +11,11 @@ class PieceHasher:
 
     def generateAllHashes(self, pieces):
         for piece in pieces:
-            self.pieceHashes.append({
-                "index": piece["index"],
-                "size": piece["size"],
-                "hash": PieceHasher.generateHashes(piece["data"])
-            })
+            self.pieceHashes.append(
+                {
+                    "index": piece["index"],
+                    "size": piece["size"],
+                    "hash": PieceHasher.generateHashes(piece["data"]).hex(),
+                }
+            )
         return self.pieceHashes
