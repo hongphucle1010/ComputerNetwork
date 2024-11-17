@@ -19,7 +19,6 @@ echo Creating configs.json...
 (
 echo {
 echo     "tracker_url": "http://localhost:3000",
-echo     "peer_id": "6739aa0012fe9a48a2cbbcd9",
 echo     "download_dir": "downloads",
 echo     "max_connections": 100,
 echo     "refresh_interval": 5,

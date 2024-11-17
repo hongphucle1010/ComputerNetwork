@@ -17,7 +17,6 @@ echo "Creating configs.json..."
 cat <<EOF > configs.json
 {
     "tracker_url": "http://localhost:3000",
-    "peer_id": "6739aa0012fe9a48a2cbbcd9",
     "download_dir": "downloads",
     "max_connections": 100,
     "refresh_interval": 5,
