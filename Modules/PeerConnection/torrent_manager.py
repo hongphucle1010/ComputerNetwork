@@ -2,6 +2,7 @@ import json
 from Modules.PeerConnection.torrent import Torrent
 from Modules.PeerConnection.piece import Piece
 from Modules.PeerConnection.seeding_pieces_manager import SeedingPiecesManager
+from Modules.PeerConnection.torrent_decoder import TorrentDecoder
 
 torrent_dir = "torrents"
 torrent_file_path = f"{torrent_dir}/torrents.json"
@@ -72,16 +73,18 @@ class TorrentManager:
 
     def addTorrent(self, file_path: str):
         # Fake torrent data
-        pieces = [
-            Piece(0, "hash0", 1024),
-            Piece(1, "hash1", 1024),
-        ]
-        torrent = Torrent(
-            "6734f7a6d04a4e80469e5d32",
-            "file1",
-            pieces,
-            2048,
-            self.program.configs.tracker_url,
+        torrent_decoder = TorrentDecoder(file_path)
+        metadata = torrent_decoder.decode()
+        print(metadata)
+        torrent = Torrent.from_dict(
+            {
+                "torrent_id": metadata["torrent_id"],
+                "file_name": metadata["name"],
+                "pieces": metadata["pieces"],
+                "total_size": metadata["size"],
+                "downloaded_pieces": 0,
+                "tracker_url": metadata["tracker_url"],
+            },
             self.program.configs,
             self,
         )

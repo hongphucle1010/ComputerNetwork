@@ -39,7 +39,9 @@ class Piece:
         piece = Piece(
             piece_dict["index"], piece_dict["hash"], piece_dict["size"], torrent_id
         )
-        piece.downloaded = piece_dict["downloaded"]
+        piece.downloaded = (
+            piece_dict["downloaded"] if "downloaded" in piece_dict else False
+        )
         return piece
 
     @staticmethod

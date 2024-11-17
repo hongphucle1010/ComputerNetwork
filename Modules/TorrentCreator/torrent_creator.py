@@ -24,15 +24,8 @@ class TorrentCreator:
             self.piece_size,
             self.piece_hasher.pieceHashes,
         )
+        metadata_builder.registerTorrent()
         torrent_encoder = TorrentEncoder(metadata_builder.to_dict())
         torrent_encoder.bencode()
         torrent_encoder.save(output_path)
-        response = self.registerTorrent(metadata_builder.to_dict())
-        torrent_id = response["id"]
-        self.file_handler.savePieces(torrent_id)
-
-    def registerTorrent(self, metadata_json):
-        response = requests.post(
-            self.tracker_url + "/api/register-torrent", json=metadata_json
-        )
-        return response.json()
+        self.file_handler.savePieces(metadata_builder.torrent_id)

@@ -1,6 +1,6 @@
 from Modules.TorrentCreator.file_handler import FileHandler
 import os
-import json
+import requests
 
 
 class MetadataBuilder:
@@ -10,6 +10,7 @@ class MetadataBuilder:
         self.size = file_size
         self.piece_size = piece_size
         self.pieceHashes = pieceHashes
+        self.torrent_id = None
 
     def set_file_info(self):
         pass
@@ -25,4 +26,12 @@ class MetadataBuilder:
             "size": self.size,
             "piece_size": self.piece_size,
             "pieces": self.pieceHashes,
+            "torrent_id": self.torrent_id,
         }
+
+    def registerTorrent(self):
+        response = requests.post(
+            self.tracker_url + "/api/register-torrent", json=self.to_dict()
+        )
+        self.torrent_id = response.json()["id"]
+        return response.json()

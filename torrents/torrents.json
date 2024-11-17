@@ -3,25 +3,49 @@
     "completed": [],
     "paused": [
         {
-            "torrent_id": "6734f7a6d04a4e80469e5d32",
-            "file_name": "file1",
+            "torrent_id": "673975a312fe9a48a2cbbcd4",
+            "file_name": "\u0110ATH-CNPM-TN03_2-BKBotScheduler.pdf",
             "pieces": [
                 {
                     "index": 0,
-                    "hash": "hash0",
-                    "size": 1024,
+                    "hash": "1635a0b9de963d7404896d2d32779d4ac0b6644e",
+                    "size": 524288,
                     "downloaded": false
                 },
                 {
                     "index": 1,
-                    "hash": "hash1",
-                    "size": 1024,
-                    "downloaded": true
+                    "hash": "38f0b9e6d660f7aca7db4a07455e7d1d587182f3",
+                    "size": 524288,
+                    "downloaded": false
+                },
+                {
+                    "index": 2,
+                    "hash": "62e6c5665d29cf24e35cb067e581d2f0089a5bf9",
+                    "size": 524288,
+                    "downloaded": false
+                },
+                {
+                    "index": 3,
+                    "hash": "e7b49334d51c6c387c7c99cbf5844f6304c7600a",
+                    "size": 524288,
+                    "downloaded": false
+                },
+                {
+                    "index": 4,
+                    "hash": "a1b91dfc52a06bca7175140f61140e67ceb21309",
+                    "size": 524288,
+                    "downloaded": false
+                },
+                {
+                    "index": 5,
+                    "hash": "0cf43c62967320a879529d83b3dd2b2b17899fa6",
+                    "size": 524288,
+                    "downloaded": false
                 }
             ],
-            "total_size": 2048,
-            "downloaded_pieces": 1,
-            "tracker_url": "http://192.168.1.7:3000"
+            "total_size": 3010320,
+            "downloaded_pieces": 0,
+            "tracker_url": "http://localhost:3000"
         }
     ]
 }
