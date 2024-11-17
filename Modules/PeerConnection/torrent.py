@@ -63,7 +63,7 @@ class Torrent:
     def mergePieces(self):
         # Check if all pieces are downloaded and the file is not already created
         if not self.downloaded_path and self.isComplete():
-            file_path = f"downloads/{self.file_name}"
+            file_path = f"{self.configs.download_dir}/{self.file_name}"
             with open(file_path, "wb") as f:
                 for piece in self.pieces:
                     f.write(piece.getData())
