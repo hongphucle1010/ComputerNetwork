@@ -66,7 +66,6 @@ class Torrent:
         self.stopPeer()
 
     def isComplete(self):
-        print("Checking if torrent is complete...")
         return self.downloaded_pieces == len(self.pieces)
 
     def progress(self):
@@ -122,10 +121,8 @@ class Torrent:
         # Open the downloaded file
         if self.downloaded_path:
             if len(self.downloaded_path) > 1:
-                print("Opening folder...")
                 os.system(f'explorer "" "{os.path.dirname(self.downloaded_path[0])}"')
             else:
-                print("Opening file...")
                 os.system(f'start "" "{self.downloaded_path[0]}"')
 
     @staticmethod

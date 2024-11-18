@@ -24,11 +24,9 @@ class MetadataBuilder:
         }
 
     def registerTorrent(self):
-        print(self.to_dict())
         response = requests.post(
             self.tracker_url + "/api/register-torrent", json=self.to_dict()
         )
-        print(response.json())
         self.torrent_id = response.json()["id"]
         return response.json()
 

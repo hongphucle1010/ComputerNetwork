@@ -3,6 +3,7 @@ import time
 import schedule
 import requests
 from configuration import Configuration
+from log import announcer_logger
 
 
 class Announcer:
@@ -15,20 +16,23 @@ class Announcer:
 
     def announce(self):
         # Send put request to tracker_url with ip, peer_id and port
-        response = requests.put(
-            self.configs.tracker_url + "/api/announce",
-            json={
-                "peerId": self.configs.peer_id,
-                "ip": self.ip,
-                "port": self.configs.port,
-                "torrents": self.program.torrent_manager.getAllTorrents(),
-            },
-        )
-        if response.status_code == 200:
-            # print("Announce successful")
-            pass
-        else:
-            print("Announce failed")
+        try:
+            response = requests.put(
+                self.configs.tracker_url + "/api/announce",
+                json={
+                    "peerId": self.configs.peer_id,
+                    "ip": self.ip,
+                    "port": self.configs.port,
+                    "torrents": self.program.torrent_manager.getAllTorrents(),
+                },
+            )
+            if response.status_code == 200:
+                announcer_logger.logger.info("Announce successful")
+                pass
+            else:
+                announcer_logger.logger.error("Announce failed")
+        except Exception as e:
+            announcer_logger.logger.error(f"Error announcing: {e}")
 
     def announce_every_interval(self):
         while not self.stop_triggered:

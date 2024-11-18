@@ -1,6 +1,7 @@
 import socket
 import threading
 import os
+from log import seeding_logger
 
 
 class SeedingPiecesManager:
@@ -13,23 +14,24 @@ class SeedingPiecesManager:
     def handle_client(self, client_socket):
         try:
             file_name = client_socket.recv(1024).decode("utf-8")
-            print(f"Received request for file: {file_name}")
+            seeding_logger.logger.info(f"Received request for file: {file_name}")
 
-            # Simulate finding the file in the seeding directory
             seeding_directory = "pieces"
             file_path = os.path.join(seeding_directory, file_name)
-            print(f"Looking for file: {file_path}")
 
             if os.path.exists(file_path):
                 with open(file_path, "rb") as file:
                     file_data = file.read()
                     client_socket.sendall(file_data)
-                print(f"Sent file {file_name} to the peer.")
+                # print(f"Sent file {file_name} to the peer.")
+                seeding_logger.logger.info(f"Sent file {file_name} to the peer.")
             else:
                 client_socket.sendall(b"ERROR: File not found")
-                print(f"File {file_name} not found.")
+                # print(f"File {file_name} not found.")
+                seeding_logger.logger.error(f"File {file_name} not found.")
         except Exception as e:
-            print(f"Error handling client: {e}")
+            # print(f"Error handling client: {e}")
+            seeding_logger.logger.error(f"Error handling client: {e}")
         finally:
             client_socket.close()
 
@@ -38,12 +40,12 @@ class SeedingPiecesManager:
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server_socket.bind(("0.0.0.0", port))
             server_socket.listen(5)
-            print("Server is listening on port", port)
+            seeding_logger.logger.info(f"Server is listening on port {port}")
             server_socket.settimeout(1)  # Allow periodic checks of stop_trigger
             while not self.stop_trigger.is_set():
                 try:
                     client_socket, address = server_socket.accept()
-                    print("Connection from", address)
+                    seeding_logger.logger.info(f"Connection from {address}")
                     client_thread = threading.Thread(
                         target=self.handle_client, args=(client_socket,)
                     )
@@ -52,7 +54,7 @@ class SeedingPiecesManager:
                 except socket.timeout:
                     continue
         except socket.error as e:
-            print(f"Socket error: {e}")
+            seeding_logger.logger.error(f"Socket error: {e}")
         finally:
             server_socket.close()
 
@@ -60,7 +62,8 @@ class SeedingPiecesManager:
         if self.thread is not None and self.thread.is_alive():
             print("Server is already running.")
             return
-        print("Starting seeding pieces manager...")
+        # print("Starting seeding pieces manager...")
+        seeding_logger.logger.info("Starting seeding pieces manager...")
         self.thread = threading.Thread(
             target=self.startServer, args=(self.torrent_manager.program.configs.port,)
         )
@@ -70,7 +73,7 @@ class SeedingPiecesManager:
         if self.thread is None or not self.thread.is_alive():
             print("Server is not running.")
             return
-        print("Stopping seeding pieces manager...")
+        seeding_logger.logger.info("Stopping seeding pieces manager...")
 
         # Signal the server loop to stop
         self.stop_trigger.set()
@@ -82,7 +85,5 @@ class SeedingPiecesManager:
         for client_thread in self.client_threads:
             client_thread.join()
 
-        print("Seeding pieces manager stopped.")
-
-    def seedPieces(self, pieces):
-        print("Seeding pieces...")
+        # print("Seeding pieces manager stopped.")
+        seeding_logger.logger.info("Seeding pieces manager stopped.")

@@ -1,6 +1,6 @@
 from Modules.PeerConnection.piece import Piece
-import time
 import socket
+from log import download_logger
 
 
 class Peer:
@@ -29,13 +29,13 @@ class Peer:
 
             # Save the file locally
             if file_data.startswith(b"ERROR"):
-                print(file_data.decode("utf-8"))
+                download_logger.logger.error(file_data.decode("utf-8"))
             else:
                 piece.setData(file_data)
-                print(
+                download_logger.logger.info(
                     f"Downloaded piece {piece.getFileName()} from {self.ip}:{self.port}"
                 )
         except Exception as e:
-            print(f"Error downloading piece: {e}")
+            download_logger.logger.error(f"Error downloading piece: {e}")
         finally:
             client_socket.close()

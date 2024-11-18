@@ -6,3 +6,4 @@ Usage: python main.py [command] [arguments]
 Options:
   -h, --help            Show this help message and exit
   -v, --version         Show program's version number and exit
+  -nt, --no-terminal    Run the program without logging terminals

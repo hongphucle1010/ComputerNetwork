@@ -10,7 +10,11 @@ if __name__ == "__main__":
                 print(f.read())
         elif sys.argv[1] == "--version" or sys.argv[1] == "-v":
             print("Version 1.0")
-            
+
+        elif sys.argv[1] == "--no-terminal" or sys.argv[1] == "-nt":
+            program = Program(False)
+            program.start()
+
     else:
         program = Program()
         program.start()

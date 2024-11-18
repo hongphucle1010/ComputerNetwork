@@ -40,16 +40,37 @@ class TorrentManager:
                 return torrent
         return None
 
+    def removeTorrent(self, torrent_id: str):
+        print("Removing torrent...")
+        torrent = self.findTorrent(torrent_id, self.active_torrents)
+        try:
+            self.active_torrents.remove(torrent)
+            torrent.stopDownload()
+            self.completed_torrents.remove(torrent)
+            self.paused_torrents.remove(torrent)
+        except ValueError:
+            print("Torrent not found")
+            return
+        finally:
+            self.saveTorrents()
+
     def pauseDownload(self, torrent_id: str):
         print("Pausing download...")
         torrent = self.findTorrent(torrent_id, self.active_torrents)
+        if torrent is None:
+            print("Torrent not found")
+            return
         self.active_torrents.remove(torrent)
         self.paused_torrents.append(torrent)
+        torrent.stopDownload()
         self.saveTorrents()
 
     def resumeDownload(self, torrent_id: str):
         print("Resuming download...")
         torrent = self.findTorrent(torrent_id, self.paused_torrents)
+        if torrent is None:
+            print("Torrent not found")
+            return
         self.paused_torrents.remove(torrent)
         torrent.startDownload()
         self.active_torrents.append(torrent)
@@ -58,6 +79,9 @@ class TorrentManager:
     def completeDownload(self, torrent_id: str):
         print("Completing download...")
         torrent = self.findTorrent(torrent_id, self.active_torrents)
+        if torrent is None:
+            print("Torrent not found")
+            return
         self.active_torrents.remove(torrent)
         self.completed_torrents.append(torrent)
         self.saveTorrents()
@@ -146,6 +170,17 @@ class TorrentManager:
     def getAllTorrents(self):
         torrents = self.active_torrents + self.completed_torrents + self.paused_torrents
         return [torrent.to_announcer_dict() for torrent in torrents]
+
+    def printAllTorrents(self):
+        print("Active torrents:")
+        for torrent in self.active_torrents:
+            print(f"{torrent.torrent_name} - {torrent.torrent_id}")
+        print("Completed torrents:")
+        for torrent in self.completed_torrents:
+            print(f"{torrent.torrent_name} - {torrent.torrent_id}")
+        print("Paused torrents:")
+        for torrent in self.paused_torrents:
+            print(f"{torrent.torrent_name} - {torrent.torrent_id}")
 
 
 # Dòng dưới dùng để testing thôi nhen ...

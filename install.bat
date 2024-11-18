@@ -13,6 +13,7 @@ echo Creating directories...
 mkdir torrents
 mkdir downloads
 mkdir pieces
+mkdir logs
 
 REM Step 3: Create configs.json
 echo Creating configs.json...

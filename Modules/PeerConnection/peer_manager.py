@@ -2,7 +2,7 @@ from Modules.PeerConnection.peer import Peer
 import requests
 from collections import deque
 import threading
-import time
+from log import download_logger
 
 
 class PeerManager:
@@ -15,34 +15,36 @@ class PeerManager:
         self.stop_triggered = False
 
     def fetchPeers(self):
-        response = requests.get(
-            f"{self.torrent.tracker_url}/api/find-available-peers/{self.torrent.torrent_id}"
-        )
-        peers = response.json()
-        for obj in peers:
-            filename = obj["filename"]
-            index = 0
-            for piece in obj["pieces"]:
-                if piece["ip"] is None:
-                    continue
-                peer = Peer(piece["peerId"], piece["ip"], piece["port"])
-                self.connectionQueue.append(
-                    (
-                        peer,
-                        self.torrent.convert_filename_index_to_piece_index[filename][
-                            index
-                        ],
+        try:
+            response = requests.get(
+                f"{self.torrent.tracker_url}/api/find-available-peers/{self.torrent.torrent_id}"
+            )
+            peers = response.json()
+            for obj in peers:
+                filename = obj["filename"]
+                index = 0
+                for piece in obj["pieces"]:
+                    if piece["ip"] is None:
+                        continue
+                    peer = Peer(piece["peerId"], piece["ip"], piece["port"])
+                    self.connectionQueue.append(
+                        (
+                            peer,
+                            self.torrent.convert_filename_index_to_piece_index[
+                                filename
+                            ][index],
+                        )
                     )
-                )
-                self.peerList.append(peer)
-                index += 1
+                    self.peerList.append(peer)
+                    index += 1
+            download_logger.logger.info(f"Fetched {len(peers)} peers.")
+        except Exception as e:
+            # print(f"Error fetching peers: {e}")
+            download_logger.logger.error(f"Error fetching peers: {e}")
 
     def stopDownload(self):
         print("Stopping download...")
         self.stop_triggered = True
-
-    # def startDownload(self):
-    # while not self.stop_triggered and not self.torrent.isComplete():
 
     def startDownload(self):
         if self.torrent.isComplete() and not self.torrent.downloaded_path:
@@ -73,6 +75,9 @@ class PeerManager:
 
                 def download_wrapper(index):
                     try:
+                        download_logger.logger.info(
+                            f"Downloading piece {index} from peer {peer}"
+                        )
                         peer.downloadPieces(self.torrent.pieces[index])
                         if self.torrent.pieces[
                             index
@@ -84,7 +89,10 @@ class PeerManager:
                                 index
                             )  # Mark index as completed
                     except Exception as e:
-                        print(f"Error downloading piece {index} from peer {peer}: {e}")
+                        # print(f"Error downloading piece {index} from peer {peer}: {e}")
+                        download_logger.logger.error(
+                            f"Error downloading piece {index} from peer {peer}: {e}"
+                        )
 
                 thread = threading.Thread(target=download_wrapper, args=(index,))
                 threads.append(thread)

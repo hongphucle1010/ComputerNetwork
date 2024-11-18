@@ -10,7 +10,7 @@ fi
 
 # Step 2: Create directories
 echo "Creating directories..."
-mkdir -p torrents downloads pieces
+mkdir -p torrents downloads pieces logs
 
 # Step 3: Create configs.json
 echo "Creating configs.json..."
