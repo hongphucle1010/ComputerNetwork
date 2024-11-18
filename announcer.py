@@ -51,7 +51,7 @@ class Announcer:
 
 
 if __name__ == "__main__":
-    announcer = Announcer("http://localhost:3000", "peer_id", "localhost", 3)
+    announcer = Announcer("http://192.168.1.7:3000", "peer_id", "localhost", 3)
     announcer.start()
     time.sleep(10)
     announcer.stop()

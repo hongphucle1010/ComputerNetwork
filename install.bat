@@ -18,7 +18,7 @@ REM Step 3: Create configs.json
 echo Creating configs.json...
 (
 echo {
-echo     "tracker_url": "http://localhost:3000",
+echo     "tracker_url": "http://103.82.133.50:3000",
 echo     "download_dir": "downloads",
 echo     "max_connections": 100,
 echo     "refresh_interval": 5,

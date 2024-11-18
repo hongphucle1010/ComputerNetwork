@@ -1,37 +1,37 @@
-from Modules.TorrentCreator.file_handler import FileHandler
+from Modules.TorrentCreator.file_handler import File
 import os
 import requests
 
 
 class MetadataBuilder:
-    def __init__(self, tracker_url, file_path, file_size, piece_size, pieceHashes):
+    def __init__(self, tracker_url: str, file_paths: list[str], piece_size: int):
         self.tracker_url = tracker_url
-        self.name = MetadataBuilder.split_file_path(file_path)
-        self.size = file_size
         self.piece_size = piece_size
-        self.pieceHashes = pieceHashes
+        self.files = [File(file_path) for file_path in file_paths]
         self.torrent_id = None
 
-    def set_file_info(self):
-        pass
+    def split_files(self):
 
-    @staticmethod
-    def split_file_path(file_path):
-        return os.path.basename(file_path)
+        for file in self.files:
+            file.split_into_pieces(self.piece_size)
 
     def to_dict(self):
         return {
             "tracker_url": self.tracker_url,
-            "name": self.name,
-            "size": self.size,
             "piece_size": self.piece_size,
-            "pieces": self.pieceHashes,
             "torrent_id": self.torrent_id,
+            "files": [file.to_dict() for file in self.files],
         }
 
     def registerTorrent(self):
+        print(self.to_dict())
         response = requests.post(
             self.tracker_url + "/api/register-torrent", json=self.to_dict()
         )
+        print(response.json())
         self.torrent_id = response.json()["id"]
         return response.json()
+
+    def save_pieces(self):
+        for file in self.files:
+            file.save(self.torrent_id)

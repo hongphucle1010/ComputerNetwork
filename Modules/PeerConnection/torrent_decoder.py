@@ -31,6 +31,6 @@ class TorrentDecoder:
 
 if __name__ == "__main__":
     TorrentDecoder = TorrentDecoder(
-        "torrents/ĐATH-CNPM-TN03_2-BKBotScheduler.pdf.torrent"
+        "torrents/my_file.torrent"
     )
     print(TorrentDecoder.decode())

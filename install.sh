@@ -16,7 +16,7 @@ mkdir -p torrents downloads pieces
 echo "Creating configs.json..."
 cat <<EOF > configs.json
 {
-    "tracker_url": "http://localhost:3000",
+    "tracker_url": "http://103.82.133.50:3000",
     "download_dir": "downloads",
     "max_connections": 100,
     "refresh_interval": 5,

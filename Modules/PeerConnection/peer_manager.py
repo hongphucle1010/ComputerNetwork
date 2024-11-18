@@ -19,16 +19,23 @@ class PeerManager:
             f"{self.torrent.tracker_url}/api/find-available-peers/{self.torrent.torrent_id}"
         )
         peers = response.json()
-        index = -1
         for obj in peers:
-            index += 1
-            # Check if obj is {} (empty)
-            if not obj:
-                self.peerList.append(None)
-                continue
-            peer = Peer(obj["peerId"], obj["ip"], obj["port"])
-            self.connectionQueue.append((peer, index))
-            self.peerList.append(peer)
+            filename = obj["filename"]
+            index = 0
+            for piece in obj["pieces"]:
+                if piece["ip"] is None:
+                    continue
+                peer = Peer(piece["peerId"], piece["ip"], piece["port"])
+                self.connectionQueue.append(
+                    (
+                        peer,
+                        self.torrent.convert_filename_index_to_piece_index(
+                            filename, index
+                        ),
+                    )
+                )
+                self.peerList.append(peer)
+                index += 1
 
     def stopDownload(self):
         print("Stopping download...")

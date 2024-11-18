@@ -2,16 +2,24 @@ import hashlib
 
 
 class Piece:
-    def __init__(self, index: int, hash: str, size: int, torrent_id: str = None):
+    def __init__(
+        self,
+        index: int,
+        hash: str,
+        size: int,
+        torrent_id: str = None,
+        file_name: str = None,
+    ):
         self.index = index
         self.hash = hash
         self.size = size
         self.downloaded = False
         self.torrent_id = torrent_id
+        self.file_name = file_name
         self.verifyDownload()
 
     def getFileName(self):
-        return f"{self.torrent_id}_{self.index}.dat"
+        return f"{self.torrent_id}_{self.file_name}_{self.index}.dat"
 
     def setData(self, data: bytes):
         # Save data to file, path: /pieces/{torrent_id}_{index}.dat
@@ -44,13 +52,18 @@ class Piece:
             "index": self.index,
             "hash": self.hash,
             "size": self.size,
+            "filename": self.file_name,
             "downloaded": self.downloaded,
         }
 
     @staticmethod
     def from_dict(piece_dict, torrent_id):
         piece = Piece(
-            piece_dict["index"], piece_dict["hash"], piece_dict["size"], torrent_id
+            piece_dict["index"],
+            piece_dict["hash"],
+            piece_dict["size"],
+            torrent_id,
+            piece_dict["filename"],
         )
         piece.downloaded = (
             piece_dict["downloaded"] if "downloaded" in piece_dict else False

@@ -3,6 +3,7 @@ from Modules.PeerConnection.torrent import Torrent
 from Modules.PeerConnection.piece import Piece
 from Modules.PeerConnection.seeding_pieces_manager import SeedingPiecesManager
 from Modules.PeerConnection.torrent_decoder import TorrentDecoder
+import os
 
 torrent_dir = "torrents"
 torrent_file_path = f"{torrent_dir}/torrents.json"
@@ -67,22 +68,52 @@ class TorrentManager:
         torrent.startDownload()
         self.saveTorrents()
 
-    def addTorrent(self, file_path: str, downloaded_path: str = None):
+    def addTorrent(self, file_path: str, downloaded_path: list[str] = []):
         # Fake torrent data
         torrent_decoder = TorrentDecoder(file_path)
         metadata = torrent_decoder.decode()
         print(metadata)
-        torrent = Torrent.from_dict(
-            {
-                "torrent_id": metadata["torrent_id"],
-                "file_name": metadata["name"],
-                "pieces": metadata["pieces"],
-                "total_size": metadata["size"],
-                "tracker_url": metadata["tracker_url"],
-                "downloaded_path": downloaded_path,
-            },
+        """
+        metadata = {'files': [{'filename': 'Hoa don.pdf', 'pieces': [{'hash': 'ec49ec89ef6ba6a01b345a57ac9feeffdf361783', 'index': 0, 'size': 524288}], 'size': 73911}, {'filename': 'ĐATH-CNPM-TN03_2-BKBotScheduler.pdf', 'pieces': [{'hash': '1635a0b9de963d7404896d2d32779d4ac0b6644e', 'index': 0, 'size': 524288}, {'hash': '38f0b9e6d660f7aca7db4a07455e7d1d587182f3', 'index': 1, 'size': 524288}, {'hash': '62e6c5665d29cf24e35cb067e581d2f0089a5bf9', 'index': 2, 'size': 524288}, {'hash': 'e7b49334d51c6c387c7c99cbf5844f6304c7600a', 'index': 3, 'size': 524288}, {'hash': 'a1b91dfc52a06bca7175140f61140e67ceb21309', 'index': 4, 'size': 524288}, {'hash': '0cf43c62967320a879529d83b3dd2b2b17899fa6', 'index': 5, 'size': 524288}], 'size': 3010320}], 'piece_size': 524288, 'torrent_id': '673b276120485a379060b014', 'tracker_url': 'http://localhost:3000'}
+        """
+        files = []
+        pieces = []
+        # Extract metadata into files
+        for file in metadata["files"]:
+            files.append(file["filename"])
+            # Check if users want to download this file
+            want_to_download = (
+                (
+                    input(f"Do you want to download {file['filename']}? (y/n): ")
+                    .lower()
+                    .strip()
+                    == "y"
+                )
+                if not downloaded_path
+                else True
+            )
+            if not want_to_download:
+                continue
+            for piece in file["pieces"]:
+                pieces.append(
+                    Piece(
+                        piece["index"],
+                        piece["hash"],
+                        piece["size"],
+                        metadata["torrent_id"],
+                        file["filename"],
+                    )
+                )
+        torrent = Torrent(
+            metadata["torrent_id"],
+            files,
+            pieces,
+            metadata["piece_size"],
+            metadata["tracker_url"],
             self.program.configs,
             self,
+            downloaded_path,
+            os.path.basename(file_path),
         )
         self.insertTorrent(torrent)
 
