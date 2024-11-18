@@ -72,9 +72,6 @@ class TorrentManager:
         torrent_decoder = TorrentDecoder(file_path)
         metadata = torrent_decoder.decode()
         print(metadata)
-        """
-        metadata = {'files': [{'filename': 'Hoa don.pdf', 'pieces': [{'hash': 'ec49ec89ef6ba6a01b345a57ac9feeffdf361783', 'index': 0, 'size': 524288}], 'size': 73911}, {'filename': 'ĐATH-CNPM-TN03_2-BKBotScheduler.pdf', 'pieces': [{'hash': '1635a0b9de963d7404896d2d32779d4ac0b6644e', 'index': 0, 'size': 524288}, {'hash': '38f0b9e6d660f7aca7db4a07455e7d1d587182f3', 'index': 1, 'size': 524288}, {'hash': '62e6c5665d29cf24e35cb067e581d2f0089a5bf9', 'index': 2, 'size': 524288}, {'hash': 'e7b49334d51c6c387c7c99cbf5844f6304c7600a', 'index': 3, 'size': 524288}, {'hash': 'a1b91dfc52a06bca7175140f61140e67ceb21309', 'index': 4, 'size': 524288}, {'hash': '0cf43c62967320a879529d83b3dd2b2b17899fa6', 'index': 5, 'size': 524288}], 'size': 3010320}], 'piece_size': 524288, 'torrent_id': '673b276120485a379060b014', 'tracker_url': 'http://localhost:3000'}
-        """
         files = []
         pieces = []
         # Extract metadata into files
