@@ -123,10 +123,10 @@ class Torrent:
         if self.downloaded_path:
             if len(self.downloaded_path) > 1:
                 print("Opening folder...")
-                os.system(f'explorer "{os.path.dirname(self.downloaded_path[0])}"')
+                os.system(f'explorer "" "{os.path.dirname(self.downloaded_path[0])}"')
             else:
                 print("Opening file...")
-                os.system(f'start "{self.downloaded_path[0]}"')
+                os.system(f'start "" "{self.downloaded_path[0]}"')
 
     @staticmethod
     def from_dict(torrent_dict, configs: Configuration, torrent_manager):
