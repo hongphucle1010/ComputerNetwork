@@ -29,9 +29,9 @@ class PeerManager:
                 self.connectionQueue.append(
                     (
                         peer,
-                        self.torrent.convert_filename_index_to_piece_index(
-                            filename, index
-                        ),
+                        self.torrent.convert_filename_index_to_piece_index[filename][
+                            index
+                        ],
                     )
                 )
                 self.peerList.append(peer)

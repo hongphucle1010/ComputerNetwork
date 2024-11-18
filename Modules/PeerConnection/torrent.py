@@ -84,6 +84,7 @@ class Torrent:
                             f.write(piece.getData())
                 self.downloaded_path.append(f"downloads/{self.torrent_name}/{file}")
             print("File created.")
+            self.open()
 
     def to_announcer_dict(self):
         # Format: {"torrentId": "6734f7a6d04a4e80469e5d32", "pieceIndexes": [1]}

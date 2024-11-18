@@ -50,7 +50,6 @@ class TorrentManager:
     def resumeDownload(self, torrent_id: str):
         print("Resuming download...")
         torrent = self.findTorrent(torrent_id, self.paused_torrents)
-        print(self.paused_torrents)
         self.paused_torrents.remove(torrent)
         torrent.startDownload()
         self.active_torrents.append(torrent)
