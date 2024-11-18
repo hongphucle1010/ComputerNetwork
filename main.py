@@ -14,6 +14,10 @@ if __name__ == "__main__":
         elif sys.argv[1] == "--no-terminal" or sys.argv[1] == "-nt":
             program = Program(False)
             program.start()
+        elif sys.argv[1] == "--gui" or sys.argv[1] == "-g":
+            import programGUI
+
+            programGUI.start_program()
 
     else:
         program = Program()

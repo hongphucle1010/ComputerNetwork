@@ -41,13 +41,22 @@ class TorrentManager:
         return None
 
     def removeTorrent(self, torrent_id: str):
-        print("Removing torrent...")
-        torrent = self.findTorrent(torrent_id, self.active_torrents)
+        print("Removing torrent...", torrent_id)
         try:
-            self.active_torrents.remove(torrent)
-            torrent.stopDownload()
-            self.completed_torrents.remove(torrent)
-            self.paused_torrents.remove(torrent)
+            torrent = self.findTorrent(torrent_id, self.active_torrents)
+            if torrent is not None:
+                self.active_torrents.remove(torrent)
+                torrent.stopDownload()
+                return
+            torrent = self.findTorrent(torrent_id, self.completed_torrents)
+            if torrent is not None:
+                self.completed_torrents.remove(torrent)
+                return
+            torrent = self.findTorrent(torrent_id, self.paused_torrents)
+            if torrent is not None:
+                self.paused_torrents.remove(torrent)
+                return
+            print("Torrent not found")
         except ValueError:
             print("Torrent not found")
             return
@@ -91,39 +100,99 @@ class TorrentManager:
         torrent.startDownload()
         self.saveTorrents()
 
-    def addTorrent(self, file_path: str, downloaded_path: list[str] = []):
+    def addTorrent(
+        self,
+        file_path: str,
+        downloaded_path: list[str] = [],
+        is_called_by_gui: bool = False,
+    ):
         # Fake torrent data
         torrent_decoder = TorrentDecoder(file_path)
         metadata = torrent_decoder.decode()
-        print(metadata)
         files = []
         pieces = []
-        # Extract metadata into files
-        for file in metadata["files"]:
-            files.append(file["filename"])
-            # Check if users want to download this file
-            want_to_download = (
-                (
-                    input(f"Do you want to download {file['filename']}? (y/n): ")
-                    .lower()
-                    .strip()
-                    == "y"
+
+        selected_files = []  # To store files selected via GUI
+
+        if is_called_by_gui:
+            # GUI logic for selecting files
+            from tkinter import Toplevel, Label, Button, Checkbutton, IntVar
+
+            gui_window = Toplevel()
+            gui_window.title("Select Files to Download")
+            gui_window.geometry("400x300")
+
+            Label(
+                gui_window, text="Select files to download:", font=("Arial", 12)
+            ).pack(pady=10)
+
+            file_vars = []  # To hold IntVars for checkboxes
+
+            # Create checkboxes for each file
+            for idx, file in enumerate(metadata["files"]):
+                var = IntVar()
+                file_vars.append(var)
+                Checkbutton(gui_window, text=file["filename"], variable=var).pack(
+                    anchor="w", padx=20
                 )
-                if not downloaded_path
-                else True
-            )
-            if not want_to_download:
-                continue
-            for piece in file["pieces"]:
-                pieces.append(
-                    Piece(
-                        piece["index"],
-                        piece["hash"],
-                        piece["size"],
-                        metadata["torrent_id"],
-                        file["filename"],
+
+            def on_confirm():
+                nonlocal selected_files
+                selected_files = [
+                    metadata["files"][i]["filename"]
+                    for i, var in enumerate(file_vars)
+                    if var.get() == 1
+                ]
+                gui_window.destroy()
+
+            Button(gui_window, text="Confirm", command=on_confirm).pack(pady=10)
+
+            gui_window.transient()  # Set as a modal window
+            gui_window.grab_set()
+            gui_window.wait_window()
+
+            # Filter pieces based on selected files
+            for file in metadata["files"]:
+                if file["filename"] in selected_files:
+                    files.append(file["filename"])
+                    for piece in file["pieces"]:
+                        pieces.append(
+                            Piece(
+                                piece["index"],
+                                piece["hash"],
+                                piece["size"],
+                                metadata["torrent_id"],
+                                file["filename"],
+                            )
+                        )
+        else:
+            # CLI Logic
+            for file in metadata["files"]:
+                files.append(file["filename"])
+                # Check if users want to download this file
+                want_to_download = (
+                    (
+                        input(f"Do you want to download {file['filename']}? (y/n): ")
+                        .lower()
+                        .strip()
+                        == "y"
                     )
+                    if not downloaded_path
+                    else True
                 )
+                if not want_to_download:
+                    continue
+                for piece in file["pieces"]:
+                    pieces.append(
+                        Piece(
+                            piece["index"],
+                            piece["hash"],
+                            piece["size"],
+                            metadata["torrent_id"],
+                            file["filename"],
+                        )
+                    )
+
         torrent = Torrent(
             metadata["torrent_id"],
             files,
@@ -168,8 +237,15 @@ class TorrentManager:
         self.seeding_pieces_manager.stop()
 
     def getAllTorrents(self):
-        torrents = self.active_torrents + self.completed_torrents + self.paused_torrents
+        torrents = self.getTorrentList()
         return [torrent.to_announcer_dict() for torrent in torrents]
+
+    def getTorrentList(self):
+        return self.active_torrents + self.completed_torrents + self.paused_torrents
+
+    def getTorrentList_StringType(self):
+        torrents = self.getTorrentList()
+        return [str(torrent) for torrent in torrents]
 
     def printAllTorrents(self):
         print("Active torrents:")

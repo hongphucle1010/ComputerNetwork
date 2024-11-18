@@ -66,10 +66,14 @@ class Torrent:
         self.stopPeer()
 
     def isComplete(self):
+        if len(self.pieces) == 0:
+            return True
         return self.downloaded_pieces == len(self.pieces)
 
     def progress(self):
         # Round to integer
+        if len(self.pieces) == 0:
+            return 100
         return int((self.downloaded_pieces / len(self.pieces)) * 100)
 
     def mergePieces(self):
@@ -118,12 +122,22 @@ class Torrent:
         }
 
     def open(self):
-        # Open the downloaded file
+        # Open the downloaded file if this is windows
         if self.downloaded_path:
             if len(self.downloaded_path) > 1:
-                os.system(f'explorer "" "{os.path.dirname(self.downloaded_path[0])}"')
+                if os.name == "nt":
+                    os.system(f'explorer "{os.path.dirname(self.downloaded_path[0])}"')
+                elif os.name == "posix":
+                    os.system(f'xdg-open "{os.path.dirname(self.downloaded_path[0])}"')
+                elif os.name == "mac":
+                    os.system(f'open "{os.path.dirname(self.downloaded_path[0])}"')
             else:
-                os.system(f'start "" "{self.downloaded_path[0]}"')
+                if os.name == "nt":
+                    os.system(f'start "" "{self.downloaded_path[0]}"')
+                elif os.name == "posix":
+                    os.system(f'xdg-open "{self.downloaded_path[0]}"')
+                elif os.name == "mac":
+                    os.system(f'open "{self.downloaded_path[0]}"')
 
     @staticmethod
     def from_dict(torrent_dict, configs: Configuration, torrent_manager):
@@ -145,3 +159,6 @@ class Torrent:
     @staticmethod
     def convertTorrentArrayToDict(torrents: list):
         return [torrent.to_dict() for torrent in torrents]
+
+    def __str__(self):
+        return f"ID: {self.torrent_id}, Name: {self.torrent_name}, Progress: {self.progress()}%"
