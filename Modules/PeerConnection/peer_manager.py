@@ -10,11 +10,10 @@ class PeerManager:
         self.active_download_indexes = []
         self.max_connections = max_connections
         self.connectionQueue = deque()
-        self.peerList = []
         self.torrent = torrent
         self.stop_triggered = False
 
-    def fetchPeers(self):
+    def fetchPeers(self, files: list[str]):
         try:
             response = requests.get(
                 f"{self.torrent.tracker_url}/api/find-available-peers/{self.torrent.torrent_id}"
@@ -22,6 +21,8 @@ class PeerManager:
             peers = response.json()
             for obj in peers:
                 filename = obj["filename"]
+                if filename not in files:
+                    continue
                 index = 0
                 for piece in obj["pieces"]:
                     if piece["ip"] is None:
@@ -35,7 +36,6 @@ class PeerManager:
                             ][index],
                         )
                     )
-                    self.peerList.append(peer)
                     index += 1
             download_logger.logger.info(f"Fetched {len(peers)} peers.")
         except Exception as e:
@@ -62,16 +62,13 @@ class PeerManager:
                 with lock:  # Ensure thread safety while accessing the queue
                     peer, index = self.connectionQueue.popleft()
                     if not self.torrent.pieces[index].downloaded:
-                        self.active_download_indexes.append(index)
+                        self.active_download_indexes.append((peer, index))
 
             # Download pieces from peers using threads
             threads = []
-            for index in list(
+            for peer, index in list(
                 self.active_download_indexes
             ):  # Iterate over a copy to avoid modifying the list during iteration
-                peer: Peer = self.peerList[index]
-                if peer is None:
-                    continue
 
                 def download_wrapper(index):
                     try:
