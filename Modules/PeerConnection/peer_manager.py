@@ -47,7 +47,7 @@ class PeerManager:
         self.stop_triggered = True
 
     def startDownload(self):
-        if self.connectionQueue:
+        if self.torrent.downloaded_path:
             self.stopDownload()
             return
         if self.torrent.isComplete() and not self.torrent.downloaded_path:
