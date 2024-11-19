@@ -23,8 +23,9 @@ class PeerManager:
                 filename = obj["filename"]
                 if filename not in files:
                     continue
-                index = 0
+                index = -1
                 for piece in obj["pieces"]:
+                    index += 1
                     if piece["ip"] is None:
                         continue
                     peer = Peer(piece["peerId"], piece["ip"], piece["port"])
@@ -36,7 +37,6 @@ class PeerManager:
                             ][index],
                         )
                     )
-                    index += 1
             download_logger.logger.info(f"Fetched {len(peers)} peers.")
         except Exception as e:
             # print(f"Error fetching peers: {e}")
@@ -70,7 +70,7 @@ class PeerManager:
                 self.active_download_indexes
             ):  # Iterate over a copy to avoid modifying the list during iteration
 
-                def download_wrapper(index):
+                def download_wrapper(peer, index):
                     try:
                         download_logger.logger.info(
                             f"Downloading piece {index} from peer {peer}"
@@ -83,7 +83,7 @@ class PeerManager:
                                 self.torrent.downloaded_pieces += 1
                         with lock:
                             self.active_download_indexes.remove(
-                                index
+                                (peer, index)
                             )  # Mark index as completed
                     except Exception as e:
                         # print(f"Error downloading piece {index} from peer {peer}: {e}")
@@ -91,7 +91,7 @@ class PeerManager:
                             f"Error downloading piece {index} from peer {peer}: {e}"
                         )
 
-                thread = threading.Thread(target=download_wrapper, args=(index,))
+                thread = threading.Thread(target=download_wrapper, args=(peer, index))
                 threads.append(thread)
                 thread.start()
 

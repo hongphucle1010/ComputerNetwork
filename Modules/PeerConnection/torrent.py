@@ -126,7 +126,7 @@ class Torrent:
         if self.downloaded_path:
             if len(self.downloaded_path) > 1:
                 if os.name == "nt":
-                    os.system(f'explorer "{os.path.dirname(self.downloaded_path[0])}"')
+                    os.system(f'explorer "{os.path.normpath(os.path.dirname(self.downloaded_path[0]))}"')
                 elif os.name == "posix":
                     os.system(f'xdg-open "{os.path.dirname(self.downloaded_path[0])}"')
                 elif os.name == "mac":

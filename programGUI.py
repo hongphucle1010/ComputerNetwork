@@ -68,6 +68,10 @@ class ProgramGUI:
         Button(button_frame, text="Resume Torrent", command=self.resume_torrent).grid(
             row=0, column=2, padx=5, pady=5, sticky="ew"
         )
+        Button(
+            button_frame, text="Reveal Downloaded File", command=self.reveal_torrent
+        ).grid(row=0, column=3, padx=5, pady=5, sticky="ew")
+
         Button(button_frame, text="Pause Torrent", command=self.pause_torrent).grid(
             row=1, column=0, padx=5, pady=5, sticky="ew"
         )
@@ -77,11 +81,15 @@ class ProgramGUI:
         Button(
             button_frame, text="Refresh Torrents", command=self.refresh_torrents
         ).grid(row=1, column=2, padx=5, pady=5, sticky="ew")
+        Button(
+            button_frame, text="Open Log Terminal", command=self.open_log_terminal
+        ).grid(row=1, column=3, padx=5, pady=5, sticky="ew")
 
         # Adjust column weights for better distribution
         button_frame.grid_columnconfigure(0, weight=1)
         button_frame.grid_columnconfigure(1, weight=1)
         button_frame.grid_columnconfigure(2, weight=1)
+        button_frame.grid_columnconfigure(3, weight=1)
 
     def create_torrent_window(self):
         window = Toplevel(self.root)
@@ -284,6 +292,23 @@ class ProgramGUI:
             self.torrent_manager.pauseDownload(torrent_id)
         except Exception as e:
             showerror("Error", f"Error pausing torrent: {e}")
+
+    def reveal_torrent(self):
+        try:
+            selection = self.listbox.curselection()
+            if not selection:
+                showerror("Error", "No torrent selected!")
+                return
+            torrent = self.torrent_list[selection[0]]
+            torrent_id = torrent.split(",")[0].split(":")[1].strip()
+            self.torrent_manager.revealDownloadedFile(torrent_id)
+        except Exception as e:
+            showerror("Error", f"Error revealing torrent: {e}")
+
+    def open_log_terminal(self):
+        announcer_logger.open_terminal()
+        download_logger.open_terminal()
+        seeding_logger.open_terminal()
 
     def shutdown(self):
         if askyesno("Exit", "Are you sure you want to exit?"):

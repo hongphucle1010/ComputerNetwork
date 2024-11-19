@@ -30,6 +30,7 @@ class Program:
                 print("4. Remove Torrent")
                 print("5. Pause Torrent")
                 print("6. Show Torrents")
+                print("7. Reveal the torrent downloaded files")
                 print("0. Exit")
                 try:
                     option = int(input("Select an option: "))
@@ -46,6 +47,8 @@ class Program:
                         self.pauseTorrent()
                     elif option == 6:
                         self.showTorrents()
+                    elif option == 7:
+                        self.revealTorrentFiles()
                     elif option == 0:
                         print("Exiting program...")
                     else:
@@ -78,6 +81,11 @@ class Program:
         print("Removing torrent...")
         torrent_id = input("Enter torrent ID: ")
         self.torrent_manager.removeTorrent(torrent_id)
+
+    def revealTorrentFiles(self):
+        print("Revealing downloaded files...")
+        torrent_id = input("Enter torrent ID: ")
+        self.torrent_manager.revealDownloadedFile(torrent_id)
 
     def resumeTorrent(self):
         print("Resume torrent...")

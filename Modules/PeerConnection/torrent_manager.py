@@ -227,6 +227,13 @@ class TorrentManager:
         except FileNotFoundError:
             pass
 
+    def revealDownloadedFile(self, torrent_id: str):
+        torrent = self.findTorrent(torrent_id, self.completed_torrents)
+        if torrent is None:
+            print("Torrent not found")
+            return
+        torrent.open()
+
     def pauseAllDownloads(self):
         for torrent in self.active_torrents:
             torrent.stopDownload()
