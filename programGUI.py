@@ -38,6 +38,7 @@ class ProgramGUI:
 
         self.create_widgets()
         self.announcer.start()
+        self.refresh_torrents()
 
     def create_widgets(self):
         Label(

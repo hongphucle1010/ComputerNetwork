@@ -3,11 +3,12 @@ import hashlib
 
 
 class FilePiece:
-    def __init__(self, index: int, data: bytes, size: int):
+    def __init__(self, index: int, data: bytes, size: int, filename: str):
         self.index = index
         self.size = size
-        self.data = data
+        self.filename = filename
         self.hash = FilePiece.hash(data)
+        self.save(data)
 
     @staticmethod
     def hash(data: bytes) -> str:
@@ -20,10 +21,16 @@ class FilePiece:
             "hash": self.hash,
         }
 
-    def save(self, torrent_id: str, file_name: str):
-        with open(f"pieces/{torrent_id}_{file_name}_{self.index}.dat", "wb") as f:
-            f.write(self.data)
+    def save(self, data: bytes):
+        with open(f"pieces/temp_{self.filename}_{self.index}.dat", "wb") as f:
+            f.write(data)
             f.close()
+
+    def rename(self, torrent_id: str):
+        os.rename(
+            f"pieces/temp_{self.filename}_{self.index}.dat",
+            f"pieces/{torrent_id}_{self.filename}_{self.index}.dat",
+        )
 
 
 class File:
@@ -46,12 +53,12 @@ class File:
                 piece = f.read(piece_size)
                 if not piece:
                     break
-                self.pieces.append(FilePiece(index, piece, piece_size))
+                self.pieces.append(FilePiece(index, piece, piece_size, self.file_name))
             f.close()
 
     def save(self, torrent_id: str):
         for piece in self.pieces:
-            piece.save(torrent_id, self.file_name)
+            piece.rename(torrent_id)
 
     @property
     def file_name(self):
