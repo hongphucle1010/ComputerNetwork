@@ -26,7 +26,7 @@ class Torrent:
         self.piece_size = piece_size
         self.tracker_url = tracker_url
         self.configs = configs
-        self.peer_manager = PeerManager(self)
+        self.peer_manager = PeerManager(self, self.configs.max_connections)
         self.thread = None
         self.torrent_manager = torrent_manager
         self.downloaded_pieces = 0
@@ -79,13 +79,19 @@ class Torrent:
     def mergePieces(self):
         # Check if all pieces are downloaded and the file is not already created
         if not self.downloaded_path and self.isComplete():
-            os.makedirs(f"downloads/{self.torrent_name}", exist_ok=True)
+            os.makedirs(
+                f"{self.configs.download_dir}/{self.torrent_name}", exist_ok=True
+            )
             for file in self.files:
-                with open(f"downloads/{self.torrent_name}/{file}", "wb") as f:
+                with open(
+                    f"{self.configs.download_dir}/{self.torrent_name}/{file}", "wb"
+                ) as f:
                     for piece in self.pieces:
                         if piece.file_name == file:
                             f.write(piece.getData())
-                self.downloaded_path.append(f"downloads/{self.torrent_name}/{file}")
+                self.downloaded_path.append(
+                    f"{self.configs.download_dir}/{self.torrent_name}/{file}"
+                )
             print("File created.")
             self.open()
 
@@ -126,7 +132,9 @@ class Torrent:
         if self.downloaded_path:
             if len(self.downloaded_path) > 1:
                 if os.name == "nt":
-                    os.system(f'explorer "{os.path.normpath(os.path.dirname(self.downloaded_path[0]))}"')
+                    os.system(
+                        f'explorer "{os.path.normpath(os.path.dirname(self.downloaded_path[0]))}"'
+                    )
                 elif os.name == "posix":
                     os.system(f'xdg-open "{os.path.dirname(self.downloaded_path[0])}"')
                 elif os.name == "mac":
