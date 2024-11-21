@@ -15,8 +15,9 @@ def get_my_os():
 
 
 class Log:
-    def __init__(self, name):
+    def __init__(self, name, enable_terminal=False):
         self.name = name
+        self.enable_terminal = enable_terminal  # Add option to open terminal or not
         self.logger = self.setup_logger()
 
     def setup_logger(self):
@@ -28,8 +29,13 @@ class Log:
         if logger.hasHandlers():
             logger.handlers.clear()
 
-        # Create file handler
-        file_handler = logging.FileHandler(self.log_file, mode="a")  # Append mode
+        # Ensure the logs directory exists
+        os.makedirs("logs", exist_ok=True)
+
+        # Create file handler with utf-8 encoding
+        file_handler = logging.FileHandler(
+            self.log_file, mode="a", encoding="utf-8"
+        )  # Set encoding to utf-8
         file_handler.setLevel(logging.DEBUG)
 
         # Create formatter and add it to the handlers
@@ -40,6 +46,10 @@ class Log:
 
         # Add the file handler to the logger
         logger.addHandler(file_handler)
+
+        # If terminal output is enabled, open terminal
+        if self.enable_terminal:
+            self.open_terminal()
 
         return logger
 
@@ -61,13 +71,13 @@ class Log:
             os.system(f"open -a Terminal tail -f {self.log_file}")
         else:
             print("Unsupported OS. Cannot open terminal.")
-            return
 
     def clear(self):
         with open(self.log_file, "w"):
             pass
 
 
-announcer_logger = Log("Announcer")
-download_logger = Log("Download")
-seeding_logger = Log("Seeding")
+# Create logger instances with the option to open terminal if needed
+announcer_logger = Log("Announcer", enable_terminal=False)
+download_logger = Log("Download", enable_terminal=False)
+seeding_logger = Log("Seeding", enable_terminal=False)
