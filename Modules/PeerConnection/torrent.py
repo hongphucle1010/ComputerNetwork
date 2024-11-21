@@ -60,7 +60,7 @@ class Torrent:
 
     def stopDownload(self):
         self.peer_manager.stopDownload()
-        if self.thread is not None:
+        if self.thread is not None and self.thread != threading.current_thread():
             self.thread.join()
         print("Download stopped")
         self.stopPeer()

@@ -81,7 +81,9 @@ class PeerManager:
         print("Stopping download...")
         self.stop_triggered = True
         # Clear temporary blocklist
-        self.temporary_blocklist = []   
+        while self.active_download_indexes:
+            time.sleep(0.1)  # Wait for ongoing downloads to finish
+        self.temporary_blocklist = []
 
     def startDownload(self):
         if self.torrent.downloaded_path:
