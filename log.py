@@ -61,6 +61,8 @@ class Log:
         print(f"Opening terminal for {self.name}...")
         if get_my_os() == "LINUX":
             # Try to open with available terminal emulators
+            if os.system(f"command -v qterminal") == 0:
+                os.system(f"qterminal -e tail -f {self.log_file}")
             if os.system(f"command -v gnome-terminal") == 0:
                 os.system(f"gnome-terminal -- tail -f {self.log_file}")
             elif os.system(f"command -v lxterminal") == 0:
