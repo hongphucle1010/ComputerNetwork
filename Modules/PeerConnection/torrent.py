@@ -4,6 +4,7 @@ from Modules.PeerConnection.piece import Piece
 import threading
 import os
 from typing import TYPE_CHECKING
+from log import download_logger
 
 if TYPE_CHECKING:
     from Modules.PeerConnection.torrent_manager import TorrentManager
@@ -18,7 +19,7 @@ class Torrent:
         piece_size: int,
         tracker_url: str,
         configs: Configuration,
-        torrent_manager: 'TorrentManager',
+        torrent_manager: "TorrentManager",
         downloaded_path: list[str] = [],
         torrent_name: str = "",
     ):
@@ -51,6 +52,7 @@ class Torrent:
         self.peer_manager.max_connections = max_connections
         self.peer_manager.fetchPeers(self.files)
         self.thread = threading.Thread(target=self.peer_manager.startDownload)
+        download_logger.logger.info(f"Starting download {self.torrent_name}...")
         self.thread.start()
         print(f"Starting download {self.torrent_name}...")
 
@@ -64,9 +66,9 @@ class Torrent:
 
     def stopDownloadFromTorrentManager(self):
         self.peer_manager.stopDownload()
-        if self.thread is not None and self.thread.is_alive(): 
+        if self.thread is not None and self.thread.is_alive():
             self.thread.join()
-            self.thread = None            
+            self.thread = None
         print("Download stopped")
         if self.isComplete():
             self.mergePieces()
@@ -157,13 +159,14 @@ class Torrent:
     def from_dict(
         torrent_dict: dict,
         configs: Configuration,
-        torrent_manager: 'TorrentManager',
-    ) -> 'Torrent':
+        torrent_manager: "TorrentManager",
+    ) -> "Torrent":
         torrent = Torrent(
             torrent_id=torrent_dict["torrent_id"],
             files=torrent_dict["files"],
             pieces=[
-                Piece.from_dict(piece_dict, None) for piece_dict in torrent_dict["pieces"]
+                Piece.from_dict(piece_dict, None)
+                for piece_dict in torrent_dict["pieces"]
             ],  # Initialize empty list
             piece_size=torrent_dict["piece_size"],
             configs=configs,
@@ -175,7 +178,7 @@ class Torrent:
         return torrent
 
     @staticmethod
-    def convertTorrentArrayToDict(torrents: list['Torrent']) -> list[dict]:
+    def convertTorrentArrayToDict(torrents: list["Torrent"]) -> list[dict]:
         return [torrent.to_dict() for torrent in torrents]
 
     def __str__(self) -> str:

@@ -21,7 +21,7 @@ from log import announcer_logger, download_logger, seeding_logger
 
 
 class ProgramGUI:
-    def __init__(self, root):
+    def __init__(self, root: Tk):
         self.root = root
         self.root.title("TorrentApplication - PhucVanKhoa - TN01")
         self.root.geometry("800x500")
@@ -29,7 +29,7 @@ class ProgramGUI:
 
         self.ip = socket.gethostbyname(socket.gethostname())
         self.configs = Configuration()
-        self.port = self.configs.port
+        self.port = self.configs.port   
         self.announcer = Announcer(self.configs, self.ip, self)
         self.torrent_manager = TorrentManager(self.configs.download_dir, self)
 
@@ -38,7 +38,11 @@ class ProgramGUI:
 
         self.create_widgets()
         self.announcer.start()
+        self.loop_refresh_torrents()
+
+    def loop_refresh_torrents(self):
         self.refresh_torrents()
+        self.root.after(500, self.loop_refresh_torrents)
 
     def create_widgets(self):
         Label(
@@ -232,7 +236,9 @@ class ProgramGUI:
                 if not path:
                     showerror("Error", "No file selected!")
                     return
-                self.torrent_manager.addTorrent(file_path=path, is_called_by_gui=True)
+                self.torrent_manager.addTorrent(
+                    file_path=path, is_called_by_gui=True, downloaded_path=[]
+                )
                 showinfo("Success", "Torrent added successfully!")
                 self.refresh_torrents()
                 window.destroy()

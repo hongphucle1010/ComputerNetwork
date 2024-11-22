@@ -9,13 +9,16 @@ from log import announcer_logger, download_logger, seeding_logger
 if TYPE_CHECKING:
     from Modules.PeerConnection.torrent_manager import TorrentManager
 
+
 class Program:
     def __init__(self, is_open_with_new_terminal: bool = True):
         self.ip = socket.gethostbyname(socket.gethostname())
         self.configs = Configuration()
         self.port = self.configs.port
         self.announcer = Announcer(self.configs, self.ip, self)
-        self.torrent_manager: 'TorrentManager' = TorrentManager(self.configs.download_dir, self)
+        self.torrent_manager: "TorrentManager" = TorrentManager(
+            self.configs.download_dir, self
+        )
         if is_open_with_new_terminal:
             announcer_logger.open_terminal()
             download_logger.open_terminal()
@@ -60,6 +63,7 @@ class Program:
                     print(f"Incorrect input. Error: {e}")
                     # Print traceback
                     import traceback
+
                     traceback.print_exc()
         except KeyboardInterrupt:
             pass
@@ -81,7 +85,7 @@ class Program:
     def addTorrent(self):
         print("Add torrent...")
         file_path = input("Enter file path: ")
-        self.torrent_manager.addTorrent(file_path=file_path)
+        self.torrent_manager.addTorrent(file_path=file_path, downloaded_path=[])
 
     def removeTorrent(self):
         print("Removing torrent...")
