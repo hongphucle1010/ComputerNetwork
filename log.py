@@ -59,11 +59,18 @@ class Log:
 
     def open_terminal(self):
         print(f"Opening terminal for {self.name}...")
-        # Open terminal for log file
         if get_my_os() == "LINUX":
-            os.system(f"gnome-terminal -- tail -f {self.log_file}")
+            # Try to open with available terminal emulators
+            if os.system(f"command -v gnome-terminal") == 0:
+                os.system(f"gnome-terminal -- tail -f {self.log_file}")
+            elif os.system(f"command -v lxterminal") == 0:
+                os.system(f"lxterminal -e tail -f {self.log_file}")
+            elif os.system(f"command -v xterm") == 0:
+                os.system(f"xterm -e tail -f {self.log_file}")
+            else:
+                print("No supported terminal emulator found.")
         elif get_my_os() == "WINDOWS":
-            # Using powershell to open a new terminal window
+            # Using PowerShell to open a new terminal window
             os.system(
                 f"start powershell.exe -NoExit -Command Get-Content {self.log_file} -Wait"
             )
