@@ -292,10 +292,15 @@ class ProgramGUI:
 
     def refresh_torrents(self):
         try:
+            # Save current selection
+            selection = self.listbox.curselection()
             self.torrent_list = self.torrent_manager.getTorrentList_StringType()
             self.listbox.delete(0, "end")
             for torrent in self.torrent_list:
                 self.listbox.insert("end", torrent)
+            # Restore selection
+            if selection:
+                self.listbox.selection_set(selection[0])
         except Exception as e:
             showerror("Error", f"Error refreshing torrents: {e}")
 
