@@ -4,10 +4,11 @@ from log import download_logger
 
 
 class Peer:
-    def __init__(self, peer_id, ip, port):
+    def __init__(self, peer_id: str, ip: str, port: int):
         self.peer_id = peer_id
         self.ip = ip
         self.port = port
+        self.client_socket = None
 
     def downloadPieces(self, piece: Piece, timeout: int = 30):
         """
@@ -23,19 +24,20 @@ class Peer:
         """
         try:
             # Create a socket and set a timeout
-            client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            client_socket.settimeout(
+            self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.client_socket.settimeout(
                 timeout
             )  # Set the timeout for all socket operations
-            client_socket.connect((self.ip, self.port))
+            self.client_socket.connect((self.ip, self.port))
 
             # Send the fileName to the server
-            client_socket.sendall(piece.getFileName().encode("utf-8"))
+            piece_filename = piece.getFileName()
+            self.client_socket.sendall(piece_filename.encode("utf-8"))
 
             # Receive the file data
             file_data = b""
-            while True:
-                chunk = client_socket.recv(4096)
+            while self.client_socket:
+                chunk = self.client_socket.recv(4096)
                 if not chunk:
                     break
                 file_data += chunk
@@ -45,9 +47,10 @@ class Peer:
                 download_logger.logger.error(file_data.decode("utf-8"))
             else:
                 piece.setData(file_data)
-                download_logger.logger.info(
-                    f"Downloaded piece {piece.getFileName()} from {self.ip}:{self.port}"
-                )
+                if piece.downloaded:
+                    download_logger.logger.info(
+                        f"Downloaded piece {piece.getFileName()} from {self.ip}:{self.port}"
+                    )
         except socket.timeout:
             download_logger.logger.warning(
                 f"Download of piece {piece.getFileName()} from {self.ip}:{self.port} timed out."
@@ -58,4 +61,13 @@ class Peer:
         except Exception as e:
             download_logger.logger.error(f"Error downloading piece: {e}")
         finally:
-            client_socket.close()
+            if self.client_socket:
+                self.client_socket.close()
+
+    def stop(self):
+        """
+        Stops the download process by closing the client socket.
+        """
+        if self.client_socket:
+            self.client_socket.close()
+            self.client_socket = None

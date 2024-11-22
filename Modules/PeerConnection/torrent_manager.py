@@ -1,16 +1,20 @@
 import json
+from typing import TYPE_CHECKING, List
 from Modules.PeerConnection.torrent import Torrent
 from Modules.PeerConnection.piece import Piece
 from Modules.PeerConnection.seeding_pieces_manager import SeedingPiecesManager
 from Modules.PeerConnection.torrent_decoder import TorrentDecoder
 import os
 
+if TYPE_CHECKING:
+    from program import Program
+
 torrent_dir = "torrents"
 torrent_file_path = f"{torrent_dir}/torrents.json"
 
 
 class TorrentManager:
-    def __init__(self, download_dir: str, program):
+    def __init__(self, download_dir: str, program: 'Program'):
         self.download_dir = download_dir
         self.active_torrents = []
         self.completed_torrents = []
@@ -34,7 +38,7 @@ class TorrentManager:
                 indent=4,
             )
 
-    def findTorrent(self, torrent_id: str, list_torrents: list[Torrent]) -> Torrent:
+    def findTorrent(self, torrent_id: str, list_torrents: List['Torrent']) -> 'Torrent':
         for torrent in list_torrents:
             if torrent.torrent_id == torrent_id:
                 return torrent
@@ -46,7 +50,7 @@ class TorrentManager:
             torrent = self.findTorrent(torrent_id, self.active_torrents)
             if torrent is not None:
                 self.active_torrents.remove(torrent)
-                torrent.stopDownload()
+                torrent.stopDownloadFromTorrentManager()
                 return
             torrent = self.findTorrent(torrent_id, self.completed_torrents)
             if torrent is not None:
@@ -71,7 +75,7 @@ class TorrentManager:
             return
         self.active_torrents.remove(torrent)
         self.paused_torrents.append(torrent)
-        torrent.stopDownload()
+        torrent.stopDownloadFromTorrentManager()
         self.saveTorrents()
 
     def resumeDownload(self, torrent_id: str):
@@ -95,7 +99,7 @@ class TorrentManager:
         self.completed_torrents.append(torrent)
         self.saveTorrents()
 
-    def insertTorrent(self, torrent: Torrent):
+    def insertTorrent(self, torrent: 'Torrent'):
         self.active_torrents.append(torrent)
         torrent.startDownload()
         self.saveTorrents()
@@ -103,7 +107,7 @@ class TorrentManager:
     def addTorrent(
         self,
         file_path: str,
-        downloaded_path: list[str] = [],
+        downloaded_path: List[str] = [],
         is_called_by_gui: bool = False,
     ):
         # Fake torrent data
@@ -161,7 +165,7 @@ class TorrentManager:
                                 piece["index"],
                                 piece["hash"],
                                 piece["size"],
-                                metadata["torrent_id"],
+                                None,
                                 file["filename"],
                             )
                         )
@@ -188,7 +192,7 @@ class TorrentManager:
                             piece["index"],
                             piece["hash"],
                             piece["size"],
-                            metadata["torrent_id"],
+                            None,
                             file["filename"],
                         )
                     )
@@ -196,7 +200,7 @@ class TorrentManager:
         torrent = Torrent(
             metadata["torrent_id"],
             files,
-            pieces,
+            pieces,  # Initialize empty list
             metadata["piece_size"],
             metadata["tracker_url"],
             self.program.configs,
@@ -236,34 +240,40 @@ class TorrentManager:
 
     def pauseAllDownloads(self):
         for torrent in self.active_torrents:
-            torrent.stopDownload()
+            torrent.stopDownloadFromTorrentManager()
 
     def stop(self):
         self.pauseAllDownloads()
         self.saveTorrents()
         self.seeding_pieces_manager.stop()
 
-    def getAllTorrents(self):
+    def getAllTorrents(self) -> List[dict]:
         torrents = self.getTorrentList()
         return [torrent.to_announcer_dict() for torrent in torrents]
 
-    def getTorrentList(self):
+    def getTorrentList(self) -> List['Torrent']:
         return self.active_torrents + self.completed_torrents + self.paused_torrents
 
-    def getTorrentList_StringType(self):
-        torrents = self.getTorrentList()
-        return [str(torrent) for torrent in torrents]
+    def getTorrentList_StringType(self) -> List[str]:
+        list = []
+        for torrent in self.active_torrents:
+            list.append(str(torrent) + " - Active")
+        for torrent in self.completed_torrents:
+            list.append(str(torrent) + " - Completed")
+        for torrent in self.paused_torrents:
+            list.append(str(torrent) + " - Paused")
+        return list
 
     def printAllTorrents(self):
         print("Active torrents:")
         for torrent in self.active_torrents:
-            print(f"{torrent.torrent_name} - {torrent.torrent_id}")
+            print(f"{torrent.torrent_name} - {torrent.torrent_id} - {torrent.progress()}")
         print("Completed torrents:")
         for torrent in self.completed_torrents:
-            print(f"{torrent.torrent_name} - {torrent.torrent_id}")
+            print(f"{torrent.torrent_name} - {torrent.torrent_id} - {torrent.progress()}")
         print("Paused torrents:")
         for torrent in self.paused_torrents:
-            print(f"{torrent.torrent_name} - {torrent.torrent_id}")
+            print(f"{torrent.torrent_name} - {torrent.torrent_id} - {torrent.progress()}")
 
 
 # Dòng dưới dùng để testing thôi nhen ...

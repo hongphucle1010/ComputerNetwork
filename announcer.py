@@ -4,15 +4,19 @@ import schedule
 import requests
 from configuration import Configuration
 from log import announcer_logger
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from program import Program
 
 
 class Announcer:
-    def __init__(self, configs: Configuration, ip: str, program):
+    def __init__(self, configs: Configuration, ip: str, program: 'Program'):
         self.configs = configs
         self.ip = ip
         self.thread = None
         self.stop_triggered = False
-        self.program = program
+        self.program: Program = program
 
     def announce(self):
         # Send put request to tracker_url with ip, peer_id and port

@@ -1,10 +1,13 @@
 import socket
+from typing import TYPE_CHECKING
 from configuration import Configuration
 from announcer import Announcer
 from Modules.PeerConnection.torrent_manager import TorrentManager
 from Modules.TorrentCreator.torrent_creator import TorrentCreator
 from log import announcer_logger, download_logger, seeding_logger
 
+if TYPE_CHECKING:
+    from Modules.PeerConnection.torrent_manager import TorrentManager
 
 class Program:
     def __init__(self, is_open_with_new_terminal: bool = True):
@@ -12,7 +15,7 @@ class Program:
         self.configs = Configuration()
         self.port = self.configs.port
         self.announcer = Announcer(self.configs, self.ip, self)
-        self.torrent_manager = TorrentManager(self.configs.download_dir, self)
+        self.torrent_manager: 'TorrentManager' = TorrentManager(self.configs.download_dir, self)
         if is_open_with_new_terminal:
             announcer_logger.open_terminal()
             download_logger.open_terminal()
@@ -55,6 +58,9 @@ class Program:
                         print("Invalid option. Please try again.")
                 except Exception as e:
                     print(f"Incorrect input. Error: {e}")
+                    # Print traceback
+                    import traceback
+                    traceback.print_exc()
         except KeyboardInterrupt:
             pass
         except Exception as e:

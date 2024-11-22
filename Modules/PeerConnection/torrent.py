@@ -3,6 +3,10 @@ from configuration import Configuration
 from Modules.PeerConnection.piece import Piece
 import threading
 import os
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Modules.PeerConnection.torrent_manager import TorrentManager
 
 
 class Torrent:
@@ -14,10 +18,8 @@ class Torrent:
         piece_size: int,
         tracker_url: str,
         configs: Configuration,
-        torrent_manager,
-        downloaded_path: list[
-            str
-        ] = [],  # If downloaded_path is not None, the file is already downloaded
+        torrent_manager: 'TorrentManager',
+        downloaded_path: list[str] = [],
         torrent_name: str = "",
     ):
         self.torrent_id = torrent_id
@@ -37,40 +39,44 @@ class Torrent:
             self.convert_filename_index_to_piece_index[file] = {}
         index = 0
         for piece in self.pieces:
-            if piece.verifyDownload():
-                self.downloaded_pieces += 1
             self.convert_filename_index_to_piece_index[piece.file_name][
                 piece.index
             ] = index
             index += 1
+        # Update the pieces to have a reference to this torrent
+        for piece in self.pieces:
+            piece.setTorrent(self)
 
     def startDownload(self, max_connections: int = 10):
         self.peer_manager.max_connections = max_connections
         self.peer_manager.fetchPeers(self.files)
         self.thread = threading.Thread(target=self.peer_manager.startDownload)
         self.thread.start()
-        print("Starting download...")
+        print(f"Starting download {self.torrent_name}...")
 
-    def stopPeer(self):
+    def stopDownloadFromPeer(self):
+        print(f"Calling stop download from peer")
         if self.isComplete():
             self.mergePieces()
             self.torrent_manager.completeDownload(self.torrent_id)
         else:
             self.torrent_manager.pauseDownload(self.torrent_id)
 
-    def stopDownload(self):
+    def stopDownloadFromTorrentManager(self):
         self.peer_manager.stopDownload()
-        if self.thread is not None and self.thread != threading.current_thread():
+        if self.thread is not None and self.thread.is_alive(): 
             self.thread.join()
+            self.thread = None            
         print("Download stopped")
-        self.stopPeer()
+        if self.isComplete():
+            self.mergePieces()
 
-    def isComplete(self):
+    def isComplete(self) -> bool:
         if len(self.pieces) == 0:
             return True
         return self.downloaded_pieces == len(self.pieces)
 
-    def progress(self):
+    def progress(self) -> int:
         # Round to integer
         if len(self.pieces) == 0:
             return 100
@@ -95,7 +101,7 @@ class Torrent:
             print("File created.")
             self.open()
 
-    def to_announcer_dict(self):
+    def to_announcer_dict(self) -> dict:
         # Format: {"torrentId": "6734f7a6d04a4e80469e5d32", "pieceIndexes": [1]}
         files = {}
         for file in self.files:
@@ -116,7 +122,7 @@ class Torrent:
             "files": files_array,
         }
 
-    def to_dict(self):
+    def to_dict(self) -> dict:
         return {
             "torrent_id": self.torrent_id,
             "files": self.files,
@@ -148,14 +154,17 @@ class Torrent:
                     os.system(f'open "{self.downloaded_path[0]}"')
 
     @staticmethod
-    def from_dict(torrent_dict, configs: Configuration, torrent_manager):
-        return Torrent(
+    def from_dict(
+        torrent_dict: dict,
+        configs: Configuration,
+        torrent_manager: 'TorrentManager',
+    ) -> 'Torrent':
+        torrent = Torrent(
             torrent_id=torrent_dict["torrent_id"],
-            pieces=[
-                Piece.from_dict(piece, torrent_dict["torrent_id"])
-                for piece in torrent_dict["pieces"]
-            ],
             files=torrent_dict["files"],
+            pieces=[
+                Piece.from_dict(piece_dict, None) for piece_dict in torrent_dict["pieces"]
+            ],  # Initialize empty list
             piece_size=torrent_dict["piece_size"],
             configs=configs,
             tracker_url=torrent_dict["tracker_url"],
@@ -163,10 +172,11 @@ class Torrent:
             downloaded_path=torrent_dict["downloaded_path"],
             torrent_name=torrent_dict["torrent_name"],
         )
+        return torrent
 
     @staticmethod
-    def convertTorrentArrayToDict(torrents: list):
+    def convertTorrentArrayToDict(torrents: list['Torrent']) -> list[dict]:
         return [torrent.to_dict() for torrent in torrents]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"ID: {self.torrent_id}, Name: {self.torrent_name}, Progress: {self.progress()}%"

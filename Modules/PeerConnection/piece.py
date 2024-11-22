@@ -1,4 +1,9 @@
 import hashlib
+from log import download_logger
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Modules.PeerConnection.torrent import Torrent
 
 
 class Piece:
@@ -7,25 +12,36 @@ class Piece:
         index: int,
         hash: str,
         size: int,
-        torrent_id: str = None,
+        torrent: 'Torrent',
         file_name: str = None,
     ):
         self.index = index
         self.hash = hash
         self.size = size
         self.downloaded = False
-        self.torrent_id = torrent_id
+        self.torrent: 'Torrent' = torrent
         self.file_name = file_name
-        self.verifyDownload()
+
+    def setTorrent(self, torrent: 'Torrent'):
+        self.torrent = torrent
+        self.setIsDownloaded(self.downloaded or self.verifyDownload())
+        
+    def setIsDownloaded(self, downloaded: bool):
+        if downloaded:
+            self.downloaded = downloaded
+            self.torrent.downloaded_pieces += 1
 
     def getFileName(self):
-        return f"{self.torrent_id}_{self.file_name}_{self.index}.dat"
+        return f"{self.torrent.torrent_id}_{self.file_name}_{self.index}.dat"
 
     def setData(self, data: bytes):
         # Save data to file, path: /pieces/{torrent_id}_{index}.dat
         with open(f"pieces/{self.getFileName()}", "wb") as f:
             f.write(data)
-        self.downloaded = True
+        download_logger.logger.info(
+            f"Saved piece {self.getFileName()} with hash {self.hash}"
+        )
+        self.setIsDownloaded(self.verifyDownload())
 
     def getData(self):
         # Check if file exists. If not, return None.
@@ -42,10 +58,10 @@ class Piece:
         return hashlib.sha1(data).hexdigest() == self.hash
 
     def verifyDownload(self):
-        if self.verifyIntegrity():
-            self.downloaded = True
-            return True
-        return False
+        download_logger.logger.info(
+            f"Verifying piece {self.getFileName()} with hash {self.hash}"
+        )
+        return self.verifyIntegrity()
 
     def to_dict(self):
         return {
@@ -57,13 +73,13 @@ class Piece:
         }
 
     @staticmethod
-    def from_dict(piece_dict, torrent_id):
+    def from_dict(piece_dict, torrent: 'Torrent') -> 'Piece':
         piece = Piece(
-            piece_dict["index"],
-            piece_dict["hash"],
-            piece_dict["size"],
-            torrent_id,
-            piece_dict["filename"],
+            index=piece_dict["index"],
+            hash=piece_dict["hash"],
+            size=piece_dict["size"],
+            torrent=torrent,
+            file_name=piece_dict["filename"],
         )
         piece.downloaded = (
             piece_dict["downloaded"] if "downloaded" in piece_dict else False

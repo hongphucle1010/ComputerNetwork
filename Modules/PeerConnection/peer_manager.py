@@ -5,11 +5,15 @@ import threading
 from log import download_logger
 import time
 from Modules.PeerConnection.piece import Piece
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from Modules.PeerConnection.torrent import Torrent
 
 
 class PeerManager:
-    def __init__(self, torrent, max_connections: int = 10):
-        self.active_download_indexes = []
+    def __init__(self, torrent: 'Torrent', max_connections: int = 10):
+        self.active_download: list[tuple[Peer, int]] = []
         self.max_connections = max_connections
         self.connectionQueue = deque()
         self.torrent = torrent
@@ -34,12 +38,13 @@ class PeerManager:
                     if piece["ip"] is None:
                         continue
                     peer = Peer(piece["peerId"], piece["ip"], piece["port"])
+                    piece_index = self.torrent.convert_filename_index_to_piece_index[
+                        filename
+                    ][index]
                     self.connectionQueue.append(
                         (
                             peer,
-                            self.torrent.convert_filename_index_to_piece_index[
-                                filename
-                            ][index],
+                            piece_index,
                         )
                     )
             download_logger.logger.info(f"Fetched {len(peers)} peers.")
@@ -55,7 +60,7 @@ class PeerManager:
                 piece.file_name
             ][piece.index]
             response = requests.get(
-                f"{self.torrent.tracker_url}/api/find-piece-peers?torrentId={self.torrent.torrent_id}&pieceIndex={piece.index}&filename={piece.file_name}"
+                f"{self.torrent.tracker_url}/api/find-piece-peers?torrentId={piece.torrent.torrent_id}&pieceIndex={piece.index}&filename={piece.file_name}"
             )
             peers = response.json()
             for obj in peers:
@@ -80,13 +85,21 @@ class PeerManager:
     def stopDownload(self):
         print("Stopping download...")
         self.stop_triggered = True
+        # Stop all active peers
+        for peer, index in self.active_download:
+            peer.stop()
         # Clear temporary blocklist
-        while self.active_download_indexes:
-            time.sleep(0.1)  # Wait for ongoing downloads to finish
+        while self.active_download:
+            print(f"There are {len(self.active_download)} active downloads.")
+            for peer, index in self.active_download:
+                print(f"Stopping download from peer {peer.peer_id}")
+            time.sleep(1)  # Wait for ongoing downloads to finish
         self.temporary_blocklist = []
+        self.stop_triggered = False
 
     def startDownload(self):
         if self.torrent.downloaded_path:
+            print(f"Download {self.torrent.torrent_name} already complete at {self.torrent.downloaded_path}")
             self.stopDownload()
             return
         if self.torrent.isComplete() and not self.torrent.downloaded_path:
@@ -98,62 +111,79 @@ class PeerManager:
         semaphore = threading.Semaphore(self.max_connections)
         threads = []
 
-        def download_wrapper(peer: Peer, index):
+        def download_wrapper(peer: Peer, index: int):
             try:
                 download_logger.logger.info(
-                    f"Downloading piece {index} from peer {peer}"
+                    f"Downloading piece {index} from peer {peer.peer_id}"
                 )
                 # Check if the piece is already downloaded
                 if self.torrent.pieces[index].downloaded:
                     return
                 peer.downloadPieces(self.torrent.pieces[index])
                 # Verify the downloaded piece, if not correct, fetch another peer to download
-                if self.torrent.pieces[index].verifyDownload():
-                    with lock:
-                        self.torrent.downloaded_pieces += 1
-                else:
+                download_logger.logger.info(
+                    f"Updating piece {index} status after download from peer {peer.peer_id}"
+                )
+                if not self.torrent.pieces[index].downloaded and not self.stop_triggered:
                     # Add the peer to the temporary blocklist, then fetch another peer
                     with lock:
                         self.temporary_blocklist.append(peer.peer_id)
                         self.fetchPeersWithPiece(self.torrent.pieces[index])
+                else:
+                    download_logger.logger.info(
+                        f"Piece {index} downloaded successfully from peer {peer.peer_id}"
+                    )
 
             except Exception as e:
                 download_logger.logger.error(
-                    f"Error downloading piece {index} from peer {peer}: {e}"
+                    f"Error downloading piece {index} from peer {peer.peer_id}: {e}"
                 )
             finally:
-                with lock:
-                    self.active_download_indexes.remove((peer, index))
                 semaphore.release()
+                # Remove the use of lock here to prevent deadlocks
+                if (peer, index) in self.active_download:
+                    with lock:
+                        self.active_download.remove((peer, index))
+                    download_logger.logger.info(
+                        f"Removed peer {peer.peer_id} from active downloads for piece {index}"
+                    )
+                download_logger.logger.info(f"Released semaphore, current value: {semaphore._value}")
 
         while not self.stop_triggered and not self.torrent.isComplete():
-            with lock:
-                while (
-                    self.connectionQueue
-                    and len(self.active_download_indexes) < self.max_connections
-                ):
-                    peer, index = self.connectionQueue.popleft()
-                    if not self.torrent.pieces[index].downloaded:
-                        self.active_download_indexes.append((peer, index))
-                        semaphore.acquire()
-                        thread = threading.Thread(
-                            target=download_wrapper, args=(peer, index)
+            while self.connectionQueue:
+                peer, index = self.connectionQueue.popleft()
+                if not self.torrent.pieces[index].downloaded:
+                    semaphore.acquire()
+                    if self.stop_triggered:
+                        semaphore.release()
+                        break
+                    download_logger.logger.info(f"Acquired semaphore, current value: {semaphore._value}")
+                    with lock:
+                        self.active_download.append((peer, index))
+                        download_logger.logger.info(
+                            f"Added peer {peer.peer_id} to active downloads for piece {index}"
                         )
-                        threads.append(thread)
-                        thread.start()
+                    thread = threading.Thread(
+                        target=download_wrapper, args=(peer, index)
+                    )
+                    threads.append(thread)
+                    thread.start()
 
             threads = [t for t in threads if t.is_alive()]
 
-            if not self.connectionQueue and not self.active_download_indexes:
+            # In case the torrent is not complete, but the active download is empty, stop the download
+            if not self.connectionQueue and not self.active_download:
                 if not self.torrent.isComplete():
                     print("Download stopped. No more peers available.")
                 else:
                     print("Download complete.")
                 self.stopDownload()
-                self.torrent.stopPeer()
                 break
 
             time.sleep(0.1)
 
         for thread in threads:
             thread.join()
+            
+        self.torrent.stopDownloadFromPeer()
+        print("Download stopped.")
