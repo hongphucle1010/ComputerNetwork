@@ -122,11 +122,29 @@ class Program:
         torrent_creator = TorrentCreator(
             file_paths, self.configs.tracker_url, piece_size
         )
-        torrent_creator.create(f"torrents/{torrent_name}.torrent")
-        if_not_add = (
-            input("Add torrent to seeding list? (y/n): ").lower().strip() == "n"
-        )
-        if not if_not_add:
-            self.torrent_manager.addTorrent(
-                file_path=f"torrents/{torrent_name}.torrent", downloaded_path=file_paths
+        try:
+            def progress_monitor():
+                while torrent_creator.progress < 100:
+                    print(f"Progress: {torrent_creator.progress:.2f}%")
+                    time.sleep(1)
+                print("Torrent creation completed.")
+
+            import threading
+            import time
+
+            progress_thread = threading.Thread(target=progress_monitor)
+            progress_thread.start()
+
+            torrent_creator.create(f"torrents/{torrent_name}.torrent")
+            progress_thread.join()
+
+            if_not_add = (
+                input("Add torrent to seeding list? (y/n): ").lower().strip() == "n"
             )
+            if not if_not_add:
+                self.torrent_manager.addTorrent(
+                    file_path=f"torrents/{torrent_name}.torrent", downloaded_path=file_paths
+                )
+        except KeyboardInterrupt:
+            torrent_creator.stop()
+            print("Torrent creation has been stopped by user.")

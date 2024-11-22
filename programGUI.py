@@ -1,4 +1,5 @@
 import socket
+import threading
 from tkinter import (
     Tk,
     Label,
@@ -10,14 +11,16 @@ from tkinter import (
     Frame,
     filedialog,
     Toplevel,
+    DoubleVar,
 )
 from tkinter.messagebox import showinfo, showerror, askyesno
-from tkinter.ttk import Combobox
+from tkinter.ttk import Combobox, Progressbar
 from configuration import Configuration
 from announcer import Announcer
 from Modules.PeerConnection.torrent_manager import TorrentManager
 from Modules.TorrentCreator.torrent_creator import TorrentCreator
 from log import announcer_logger, download_logger, seeding_logger
+import os
 
 
 class ProgramGUI:
@@ -29,7 +32,7 @@ class ProgramGUI:
 
         self.ip = socket.gethostbyname(socket.gethostname())
         self.configs = Configuration()
-        self.port = self.configs.port   
+        self.port = self.configs.port
         self.announcer = Announcer(self.configs, self.ip, self)
         self.torrent_manager = TorrentManager(self.configs.download_dir, self)
 
@@ -103,6 +106,7 @@ class ProgramGUI:
         window.grab_set()
 
         selected_files = []  # To store selected file paths
+        self.creator = None  # Initialize creator
 
         Label(window, text="Piece Size:").grid(row=0, column=0, padx=10, pady=5)
 
@@ -148,59 +152,91 @@ class ProgramGUI:
         file_list_label = Label(window, text="No files selected.")
         file_list_label.grid(row=3, column=0, columnspan=2, padx=10, pady=5)
 
+        progress_var = DoubleVar()
+        progress_bar = Progressbar(window, variable=progress_var, maximum=100)
+        progress_bar.grid(row=5, column=0, columnspan=2, padx=10, pady=5, sticky="ew")
+
+        progress_label = Label(window, text="Progress: 0%")
+        progress_label.grid(row=6, column=0, columnspan=2, padx=10, pady=5)
+
+        def update_progress():
+            if self.creator:
+                progress = self.creator.progress
+                progress_var.set(progress)
+                progress_label.config(text=f"Progress: {progress:.2f}%")
+                if progress < 100:
+                    window.after(100, update_progress)
+
         def create():
-            try:
-                if not selected_files:
-                    raise ValueError(
-                        "No files selected. Please select files to create a torrent."
+            if not selected_files:
+                showerror("Error", "No files selected.")
+                return
+            piece_size_text = piece_size_var.get()
+            if not piece_size_text:
+                showerror("Error", "Please select a piece size.")
+                return
+            name = torrent_name.get()
+            if not name.strip():
+                showerror("Error", "Torrent name cannot be empty.")
+                return
+
+            # Convert piece size text to bytes
+            size_mapping = {
+                "256 KB": 256 * 1024,
+                "512 KB": 512 * 1024,
+                "1 MB": 1 * 1024 * 1024,
+                "2 MB": 2 * 1024 * 1024,
+                "4 MB": 4 * 1024 * 1024,
+                "8 MB": 8 * 1024 * 1024,
+                "16 MB": 16 * 1024 * 1024,
+                "32 MB": 32 * 1024 * 1024,
+            }
+            piece = size_mapping[piece_size_text]
+
+            # Start the torrent creation in a new thread
+            def torrent_creation_thread():
+                try:
+                    self.creator = TorrentCreator(
+                        selected_files, self.configs.tracker_url, piece
                     )
-                piece_size_text = piece_size_var.get()
-                if not piece_size_text:
-                    raise ValueError("Please select a piece size.")
+                    window.after(100, update_progress)
+                    self.creator.create(f"torrents/{name}.torrent")
+                    if self.creator._stop:
+                        return  # Torrent creation was stopped
+                    showinfo("Success", "Torrent created successfully!")
+                    if_add = askyesno("Add Torrent", "Add torrent to seeding list?")
+                    if if_add:
+                        self.torrent_manager.addTorrent(
+                            file_path=f"torrents/{name}.torrent",
+                            downloaded_path=selected_files,
+                        )
+                    self.refresh_torrents()
+                    # Open folder containing the created torrent file
 
-                # Convert piece size text to bytes
-                size_mapping = {
-                    "256 KB": 256 * 1024,
-                    "512 KB": 512 * 1024,
-                    "1 MB": 1 * 1024 * 1024,
-                    "2 MB": 2 * 1024 * 1024,
-                    "4 MB": 4 * 1024 * 1024,
-                    "8 MB": 8 * 1024 * 1024,
-                    "16 MB": 16 * 1024 * 1024,
-                    "32 MB": 32 * 1024 * 1024,
-                }
-                piece = size_mapping[piece_size_text]
+                    if os.name == "nt":
+                        os.system(f'explorer /select,"torrents\\{name}.torrent"')
+                    elif os.name == "posix":
+                        os.system(f'xdg-open "torrents/{name}.torrent"')
+                    elif os.name == "mac":
+                        os.system(f'open "torrents/{name}.torrent"')
+                    window.destroy()
+                except Exception as e:
+                    showerror("Error", f"Error creating torrent: {e}")
 
-                name = torrent_name.get()
-                if not name.strip():
-                    raise ValueError("Torrent name cannot be empty.")
-                creator = TorrentCreator(
-                    selected_files, self.configs.tracker_url, piece
-                )
-                creator.create(f"torrents/{name}.torrent")
-                showinfo("Success", "Torrent created successfully!")
+            self.creation_thread = threading.Thread(target=torrent_creation_thread)
+            self.creation_thread.start()
+            update_progress()  # Start updating the progress
 
-                if_add = askyesno("Add Torrent", "Add torrent to seeding list?")
-                if if_add:
-                    self.torrent_manager.addTorrent(
-                        file_path=f"torrents/{name}.torrent",
-                        downloaded_path=selected_files,
-                    )
-                self.refresh_torrents()
+        def stop_creation():
+            if self.creator:
+                self.creator.stop()
+                showinfo("Stopped", "Torrent creation has been stopped.")
+            window.destroy()
 
-                import os
+        def on_window_close():
+            stop_creation()
 
-                # Open folder containing the created torrent file, select the file
-                if os.name == "nt":
-                    os.system(f'explorer /select,"torrents\\{name}.torrent"')
-                elif os.name == "posix":
-                    os.system(f'xdg-open "torrents/{name}.torrent"')
-                elif os.name == "mac":
-                    os.system(f'open "torrents/{name}.torrent"')
-
-                window.destroy()
-            except Exception as e:
-                showerror("Error", f"Error creating torrent: {e}")
+        window.protocol("WM_DELETE_WINDOW", on_window_close)
 
         Button(window, text="Create Torrent", command=create).grid(
             row=4, column=0, columnspan=2, pady=10

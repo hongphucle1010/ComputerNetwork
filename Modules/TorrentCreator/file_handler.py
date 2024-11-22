@@ -37,6 +37,11 @@ class File:
     def __init__(self, file_path):
         self.file_path = file_path
         self.pieces: list[FilePiece] = []
+        self._stop = False
+        self.progress = 0  # Progress percentage for this file
+
+    def stop(self):
+        self._stop = True
 
     def to_dict(self):
         return {
@@ -45,16 +50,24 @@ class File:
             "pieces": [piece.to_dict() for piece in self.pieces],
         }
 
-    def split_into_pieces(self, piece_size: int):
+    def split_into_pieces(self, piece_size: int, progress_callback=None):
+        total_size = self.file_size
+        processed_size = 0
         with open(self.file_path, "rb") as f:
             index = -1
             while True:
+                if self._stop:
+                    break
                 index += 1
                 piece = f.read(piece_size)
                 if not piece:
                     break
                 self.pieces.append(FilePiece(index, piece, piece_size, self.file_name))
-            f.close()
+                processed_size += len(piece)
+                self.progress = (processed_size / total_size) * 100
+                if progress_callback:
+                    progress_callback(len(piece))
+        self._stop = False  # Reset the stop flag after stopping
 
     def save(self, torrent_id: str):
         for piece in self.pieces:
