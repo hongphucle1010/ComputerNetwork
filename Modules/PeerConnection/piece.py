@@ -1,6 +1,7 @@
 import hashlib
 from log import download_logger
 from typing import TYPE_CHECKING
+import os
 
 if TYPE_CHECKING:
     from Modules.PeerConnection.torrent import Torrent
@@ -12,20 +13,20 @@ class Piece:
         index: int,
         hash: str,
         size: int,
-        torrent: 'Torrent',
+        torrent: "Torrent",
         file_name: str = None,
     ):
         self.index = index
         self.hash = hash
         self.size = size
         self.downloaded = False
-        self.torrent: 'Torrent' = torrent
+        self.torrent: "Torrent" = torrent
         self.file_name = file_name
 
-    def setTorrent(self, torrent: 'Torrent'):
+    def setTorrent(self, torrent: "Torrent"):
         self.torrent = torrent
         self.setIsDownloaded(self.downloaded or self.verifyDownload())
-        
+
     def setIsDownloaded(self, downloaded: bool):
         if downloaded:
             self.downloaded = downloaded
@@ -42,6 +43,12 @@ class Piece:
             f"Saved piece {self.getFileName()} with hash {self.hash}"
         )
         self.setIsDownloaded(self.verifyDownload())
+
+    def deleteData(self):
+        try:
+            os.remove(f"pieces/{self.getFileName()}")
+        except FileNotFoundError:
+            pass
 
     def getData(self):
         # Check if file exists. If not, return None.
@@ -73,7 +80,7 @@ class Piece:
         }
 
     @staticmethod
-    def from_dict(piece_dict, torrent: 'Torrent') -> 'Piece':
+    def from_dict(piece_dict, torrent: "Torrent") -> "Piece":
         piece = Piece(
             index=piece_dict["index"],
             hash=piece_dict["hash"],

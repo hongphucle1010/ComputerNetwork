@@ -14,7 +14,7 @@ torrent_file_path = f"{torrent_dir}/torrents.json"
 
 
 class TorrentManager:
-    def __init__(self, download_dir: str, program: 'Program'):
+    def __init__(self, download_dir: str, program: "Program"):
         self.download_dir = download_dir
         self.active_torrents = []
         self.completed_torrents = []
@@ -38,7 +38,7 @@ class TorrentManager:
                 indent=4,
             )
 
-    def findTorrent(self, torrent_id: str, list_torrents: List['Torrent']) -> 'Torrent':
+    def findTorrent(self, torrent_id: str, list_torrents: List["Torrent"]) -> "Torrent":
         for torrent in list_torrents:
             if torrent.torrent_id == torrent_id:
                 return torrent
@@ -51,14 +51,17 @@ class TorrentManager:
             if torrent is not None:
                 self.active_torrents.remove(torrent)
                 torrent.stopDownloadFromTorrentManager()
+                torrent.delete()
                 return
             torrent = self.findTorrent(torrent_id, self.completed_torrents)
             if torrent is not None:
                 self.completed_torrents.remove(torrent)
+                torrent.delete()
                 return
             torrent = self.findTorrent(torrent_id, self.paused_torrents)
             if torrent is not None:
                 self.paused_torrents.remove(torrent)
+                torrent.delete()
                 return
             print("Torrent not found")
         except ValueError:
@@ -99,7 +102,7 @@ class TorrentManager:
         self.completed_torrents.append(torrent)
         self.saveTorrents()
 
-    def insertTorrent(self, torrent: 'Torrent'):
+    def insertTorrent(self, torrent: "Torrent"):
         self.active_torrents.append(torrent)
         torrent.startDownload()
         self.saveTorrents()
@@ -251,7 +254,7 @@ class TorrentManager:
         torrents = self.getTorrentList()
         return [torrent.to_announcer_dict() for torrent in torrents]
 
-    def getTorrentList(self) -> List['Torrent']:
+    def getTorrentList(self) -> List["Torrent"]:
         return self.active_torrents + self.completed_torrents + self.paused_torrents
 
     def getTorrentList_StringType(self) -> List[str]:
@@ -267,13 +270,19 @@ class TorrentManager:
     def printAllTorrents(self):
         print("Active torrents:")
         for torrent in self.active_torrents:
-            print(f"{torrent.torrent_name} - {torrent.torrent_id} - {torrent.progress()}")
+            print(
+                f"{torrent.torrent_name} - {torrent.torrent_id} - {torrent.progress()}"
+            )
         print("Completed torrents:")
         for torrent in self.completed_torrents:
-            print(f"{torrent.torrent_name} - {torrent.torrent_id} - {torrent.progress()}")
+            print(
+                f"{torrent.torrent_name} - {torrent.torrent_id} - {torrent.progress()}"
+            )
         print("Paused torrents:")
         for torrent in self.paused_torrents:
-            print(f"{torrent.torrent_name} - {torrent.torrent_id} - {torrent.progress()}")
+            print(
+                f"{torrent.torrent_name} - {torrent.torrent_id} - {torrent.progress()}"
+            )
 
 
 # Dòng dưới dùng để testing thôi nhen ...

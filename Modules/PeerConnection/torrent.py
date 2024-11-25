@@ -73,6 +73,10 @@ class Torrent:
         if self.isComplete():
             self.mergePieces()
 
+    def delete(self):
+        for piece in self.pieces:
+            piece.deleteData()
+
     def isComplete(self) -> bool:
         if len(self.pieces) == 0:
             return True
