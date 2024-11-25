@@ -10,9 +10,7 @@ class MetadataBuilder:
         self._stop = False
         self.files = [File(file_path) for file_path in file_paths]
         self.torrent_id = None
-        self.progress = 0
         self.total_size = sum(file.file_size for file in self.files)
-        self._progress = 0
 
     def stop(self):
         self._stop = True
@@ -23,7 +21,7 @@ class MetadataBuilder:
         for file in self.files:
             if self._stop:
                 break
-            file.split_into_pieces(self.piece_size)
+            file.split_into_pieces(self.piece_size, None)
         self._stop = False  # Reset the stop flag after stopping
 
     @property
