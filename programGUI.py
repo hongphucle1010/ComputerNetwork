@@ -216,7 +216,8 @@ class ProgramGUI:
                     if os.name == "nt":
                         os.system(f'explorer /select,"torrents\\{name}.torrent"')
                     elif os.name == "posix":
-                        os.system(f'xdg-open "torrents/{name}.torrent"')
+                        # os.system(f'xdg-open "torrents/{name}.torrent"')
+                        pass
                     elif os.name == "mac":
                         os.system(f'open "torrents/{name}.torrent"')
                     window.destroy()
