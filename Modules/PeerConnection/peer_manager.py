@@ -120,19 +120,19 @@ class PeerManager:
         semaphore = threading.Semaphore(self.max_connections)
         threads = []
 
-        # New function to continuously fetch peers
-        def peer_fetcher():
-            while not self.stop_triggered and not self.torrent.isComplete():
-                self.fetchPeers(self.torrent.files)
-                time.sleep(5)  # Wait before fetching peers again
-
-        # Start the peer_fetcher thread
-        fetcher_thread = threading.Thread(target=peer_fetcher)
-        fetcher_thread.start()
-
         def download_wrapper(peer: Peer, index: int):
             try:
                 download_logger.logger.info(
+                    f"Downloading piece {index} from peer {peer.peer_id}"
+                )
+                # Check if the piece is already downloaded
+                if self.torrent.pieces[index].downloaded:
+                    return
+                peer.downloadPieces(self.torrent.pieces[index])
+                # Verify the downloaded piece, if not correct, fetch another peer to download
+                download_logger.logger.info(
+                    f"Updating piece {index} status after download from peer {peer.peer_id}"
+                )
                 if (
                     not self.torrent.pieces[index].downloaded
                     and not self.stop_triggered
