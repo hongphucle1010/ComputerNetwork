@@ -114,7 +114,8 @@ class Torrent:
             files[file] = []
 
         for piece in self.pieces:
-            files[piece.file_name].append(piece.index)
+            if piece.downloaded:
+                files[piece.file_name].append(piece.index)
 
         files_array = []
         for file in files:
@@ -148,14 +149,16 @@ class Torrent:
                         f'explorer "{os.path.normpath(os.path.dirname(self.downloaded_path[0]))}"'
                     )
                 elif os.name == "posix":
-                    os.system(f'xdg-open "{os.path.dirname(self.downloaded_path[0])}"')
+                    # os.system(f'xdg-open "{os.path.dirname(self.downloaded_path[0])}"')
+                    pass
                 elif os.name == "mac":
                     os.system(f'open "{os.path.dirname(self.downloaded_path[0])}"')
             else:
                 if os.name == "nt":
                     os.system(f'start "" "{self.downloaded_path[0]}"')
                 elif os.name == "posix":
-                    os.system(f'xdg-open "{self.downloaded_path[0]}"')
+                    # os.system(f'xdg-open "{self.downloaded_path[0]}"')
+                    pass
                 elif os.name == "mac":
                     os.system(f'open "{self.downloaded_path[0]}"')
 
