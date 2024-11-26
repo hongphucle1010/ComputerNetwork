@@ -48,7 +48,7 @@ class Torrent:
         for piece in self.pieces:
             piece.setTorrent(self)
 
-    def startDownload(self, max_connections: int = 10):
+    def startDownload(self, max_connections: int = 100):
         self.peer_manager.max_connections = max_connections
         self.peer_manager.fetchPeers(self.files)
         self.thread = threading.Thread(target=self.peer_manager.startDownload)

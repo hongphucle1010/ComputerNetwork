@@ -12,15 +12,17 @@ if TYPE_CHECKING:
 
 
 class PeerManager:
-    def __init__(self, torrent: "Torrent", max_connections: int = 10):
+    BLOCK_PERIOD = 30  # Block peers for 300 seconds (5 minutes)
+
+    def __init__(self, torrent: "Torrent", max_connections: int = 100):
         self.active_download: list[tuple[Peer, int]] = []
         self.max_connections = max_connections
         self.connectionQueue = deque()
         self.torrent = torrent
         self.stop_triggered = False
         self.temporary_blocklist = (
-            []
-        )  # List of peers that temporarily cannot connect to
+            {}
+        )  # Dict of peer IDs and their unblock times
 
     def fetchPeers(self, files: list[str]):
         try:
@@ -37,6 +39,12 @@ class PeerManager:
                     index += 1
                     if piece["ip"] is None:
                         continue
+                    unblock_time = self.temporary_blocklist.get(piece["peerId"])
+                    if unblock_time is not None:
+                        if time.time() < unblock_time:
+                            continue  # Peer is still blocked
+                        else:
+                            del self.temporary_blocklist[piece["peerId"]]  # Remove expired block
                     peer = Peer(piece["peerId"], piece["ip"], piece["port"])
                     piece_index = self.torrent.convert_filename_index_to_piece_index[
                         filename
@@ -64,9 +72,12 @@ class PeerManager:
             )
             peers = response.json()
             for obj in peers:
-                # Check if the peer is in the temporary blocklist
-                if obj["peerId"] in self.temporary_blocklist:
-                    continue
+                unblock_time = self.temporary_blocklist.get(obj["peerId"])
+                if unblock_time is not None:
+                    if time.time() < unblock_time:
+                        continue  # Peer is still blocked
+                    else:
+                        del self.temporary_blocklist[obj["peerId"]]  # Remove expired block
                 peer = Peer(obj["peerId"], obj["ip"], obj["port"])
                 self.connectionQueue.append(
                     (
@@ -91,7 +102,7 @@ class PeerManager:
         # Clear temporary blocklist
         while self.active_download:
             time.sleep(1)  # Wait for ongoing downloads to finish
-        self.temporary_blocklist = []
+        self.temporary_blocklist.clear()
         self.stop_triggered = False
 
     def startDownload(self):
@@ -109,26 +120,27 @@ class PeerManager:
         semaphore = threading.Semaphore(self.max_connections)
         threads = []
 
+        # New function to continuously fetch peers
+        def peer_fetcher():
+            while not self.stop_triggered and not self.torrent.isComplete():
+                self.fetchPeers(self.torrent.files)
+                time.sleep(5)  # Wait before fetching peers again
+
+        # Start the peer_fetcher thread
+        fetcher_thread = threading.Thread(target=peer_fetcher)
+        fetcher_thread.start()
+
         def download_wrapper(peer: Peer, index: int):
             try:
                 download_logger.logger.info(
-                    f"Downloading piece {index} from peer {peer.peer_id}"
-                )
-                # Check if the piece is already downloaded
-                if self.torrent.pieces[index].downloaded:
-                    return
-                peer.downloadPieces(self.torrent.pieces[index])
-                # Verify the downloaded piece, if not correct, fetch another peer to download
-                download_logger.logger.info(
-                    f"Updating piece {index} status after download from peer {peer.peer_id}"
-                )
                 if (
                     not self.torrent.pieces[index].downloaded
                     and not self.stop_triggered
                 ):
-                    # Add the peer to the temporary blocklist, then fetch another peer
+                    # Add the peer to the temporary blocklist with an unblock time
                     with lock:
-                        self.temporary_blocklist.append(peer.peer_id)
+                        unblock_time = time.time() + self.BLOCK_PERIOD
+                        self.temporary_blocklist[peer.peer_id] = unblock_time
                         self.fetchPeersWithPiece(self.torrent.pieces[index])
                 else:
                     download_logger.logger.info(
@@ -176,14 +188,15 @@ class PeerManager:
 
             threads = [t for t in threads if t.is_alive()]
 
-            # In case the torrent is not complete, but the active download is empty, stop the download
             if not self.connectionQueue and not self.active_download:
                 if not self.torrent.isComplete():
-                    print("Download stopped. No more peers available.")
+                    print("No more peers available. Retrying...")
+                    time.sleep(5)  # Wait before retrying
+                    self.fetchPeers(self.torrent.files)
+                    continue  # Retry fetching peers
                 else:
                     print("Download complete.")
-                self.stopDownload()
-                break
+                    break
 
             time.sleep(0.1)
 

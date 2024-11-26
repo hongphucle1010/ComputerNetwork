@@ -88,7 +88,7 @@ class TorrentManager:
             print("Torrent not found")
             return
         self.paused_torrents.remove(torrent)
-        torrent.startDownload()
+        torrent.startDownload(self.program.configs.max_connections)
         self.active_torrents.append(torrent)
         self.saveTorrents()
 
@@ -104,7 +104,7 @@ class TorrentManager:
 
     def insertTorrent(self, torrent: "Torrent"):
         self.active_torrents.append(torrent)
-        torrent.startDownload()
+        torrent.startDownload(self.program.configs.max_connections)
         self.saveTorrents()
 
     def addTorrent(
@@ -230,7 +230,7 @@ class TorrentManager:
                     for torrent in torrents["paused"]
                 ]
             for torrent in self.active_torrents:
-                torrent.startDownload()
+                torrent.startDownload(self.program.configs.max_connections)
         except FileNotFoundError:
             pass
 
