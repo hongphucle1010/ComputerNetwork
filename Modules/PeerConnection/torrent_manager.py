@@ -12,11 +12,6 @@ if TYPE_CHECKING:
 torrent_dir = "torrents"
 torrent_file_path = f"{torrent_dir}/torrents.json"
 
-# Create a timer to measure the time taken to download a torrent
-
-import time
-
-
 
 class TorrentManager:
     def __init__(self, download_dir: str, program: "Program"):
@@ -105,14 +100,10 @@ class TorrentManager:
             return
         self.active_torrents.remove(torrent)
         self.completed_torrents.append(torrent)
-        end_time = time.time()
-        download_time = end_time - self.timer
-        print(f"Download time: {download_time}")
         self.saveTorrents()
 
     def insertTorrent(self, torrent: "Torrent"):
         self.active_torrents.append(torrent)
-        self.timer = time.time()
         torrent.startDownload()
         self.saveTorrents()
 
