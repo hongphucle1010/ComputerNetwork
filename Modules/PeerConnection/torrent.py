@@ -114,7 +114,8 @@ class Torrent:
             files[file] = []
 
         for piece in self.pieces:
-            files[piece.file_name].append(piece.index)
+            if piece.downloaded:
+                files[piece.file_name].append(piece.index)
 
         files_array = []
         for file in files:
