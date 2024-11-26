@@ -22,6 +22,22 @@ from Modules.TorrentCreator.torrent_creator import TorrentCreator
 from log import announcer_logger, download_logger, seeding_logger
 import os
 
+def get_lan_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Try to connect to an external host to get the LAN IP
+        s.connect(('8.8.8.8', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        try:
+            # If that fails, use gethostbyname to get the IP
+            IP = socket.gethostbyname(socket.gethostname())
+        except Exception:
+            # If all methods fail, default to localhost
+            IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
 
 class ProgramGUI:
     def __init__(self, root: Tk):
@@ -30,7 +46,7 @@ class ProgramGUI:
         self.root.geometry("800x500")
         self.root.protocol("WM_DELETE_WINDOW", self.shutdown)
 
-        self.ip = socket.gethostbyname(socket.gethostname())
+        self.ip = get_lan_ip()
         self.configs = Configuration()
         self.port = self.configs.port
         self.announcer = Announcer(self.configs, self.ip, self)

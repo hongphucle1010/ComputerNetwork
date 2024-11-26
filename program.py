@@ -10,9 +10,27 @@ if TYPE_CHECKING:
     from Modules.PeerConnection.torrent_manager import TorrentManager
 
 
+def get_lan_ip():
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # Try to connect to an external host to get the LAN IP
+        s.connect(('8.8.8.8', 1))
+        IP = s.getsockname()[0]
+    except Exception:
+        try:
+            # If that fails, use gethostbyname to get the IP
+            IP = socket.gethostbyname(socket.gethostname())
+        except Exception:
+            # If all methods fail, default to localhost
+            IP = '127.0.0.1'
+    finally:
+        s.close()
+    return IP
+
+
 class Program:
     def __init__(self, is_open_with_new_terminal: bool = True):
-        self.ip = socket.gethostbyname(socket.gethostname())
+        self.ip = get_lan_ip()
         self.configs = Configuration()
         self.port = self.configs.port
         self.announcer = Announcer(self.configs, self.ip, self)
